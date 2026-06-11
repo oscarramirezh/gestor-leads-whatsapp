@@ -1,0 +1,16 @@
+# Secretos — nunca al repo
+.env
+.env.*
+!.env.example
+
+# Dependencias y builds
+node_modules/
+dist/
+.netlify/
+
+# Configuración local de Claude Code (permisos por máquina)
+.claude/settings.local.json
+
+# Sistema
+.DS_Store
+Thumbs.db

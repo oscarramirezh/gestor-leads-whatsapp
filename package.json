@@ -1,0 +1,19 @@
+{
+  "name": "gestor-leads-whatsapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Gestor de leads de WhatsApp para equipo de ventas Movistar (MejoraTuTarifa)",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^2.8.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

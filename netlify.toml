@@ -1,0 +1,12 @@
+# Configuración de Netlify.
+# Las funciones de la carpeta netlify/functions se publican automáticamente en
+# https://TU-SITIO.netlify.app/.netlify/functions/<nombre-de-archivo>
+
+[build]
+  # Por ahora no hay frontend que compilar; cuando montemos el dashboard
+  # (paso 5) aquí irá el comando de build de React.
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
