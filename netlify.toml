@@ -3,8 +3,8 @@
 # https://TU-SITIO.netlify.app/.netlify/functions/<nombre-de-archivo>
 
 [build]
-  # Por ahora no hay frontend que compilar; cuando montemos el dashboard
-  # (paso 5) aquí irá el comando de build de React.
+  # Compila el dashboard de React (web/) a public/, que es lo que se publica.
+  command = "npm run build"
   publish = "public"
 
 [functions]

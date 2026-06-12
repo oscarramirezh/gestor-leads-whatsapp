@@ -6,6 +6,7 @@
 # Dependencias y builds
 node_modules/
 dist/
+public/
 .netlify/
 
 # Configuración local de Claude Code (permisos por máquina)

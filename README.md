@@ -9,7 +9,7 @@ Movistar. Ver [CLAUDE.md](CLAUDE.md) para el contexto completo del negocio.
 - ✅ **Webhook de Meta** — [netlify/functions/webhook.ts](netlify/functions/webhook.ts)
 - ✅ **Bot de calificación** — [src/lib/bot.ts](src/lib/bot.ts)
 - ✅ **Asignación round-robin** — función SQL `asignar_lead` en el esquema
-- ⬜ Dashboard Vendedor (paso 5)
+- ✅ **Dashboard Vendedor** (paso 5) — [web/](web/), bandeja + chat + tomar/cerrar
 - ⬜ Vistas Capitán/Líder + alerta SLA (paso 6)
 - ⬜ Exportar a CSV (paso 7)
 
@@ -31,7 +31,11 @@ Bot de calificación (src/lib/bot.ts): plan → portabilidad/línea nueva → ci
 asignar_lead() en Postgres: round-robin entre vendedores disponibles
         │  estado=asignado, historial en `asignaciones`, auditoría en `eventos`
         ▼
-El dashboard (próximo paso) recibe el lead por Supabase Realtime
+El dashboard (web/) recibe el lead por Supabase Realtime
+        │  el vendedor ve su bandeja, "Tomar" el lead y chatear
+        ▼
+Responder en el dashboard → netlify/functions/enviar-mensaje
+        │  valida la sesión, llama a la Cloud API y registra el mensaje saliente
 ```
 
 ## Puesta en marcha
@@ -39,15 +43,21 @@ El dashboard (próximo paso) recibe el lead por Supabase Realtime
 ### 1. Supabase (base de datos)
 
 1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
-2. En **SQL Editor**, pega y ejecuta el contenido de `supabase/schema.sql`.
+2. En **SQL Editor**, pega y ejecuta el contenido de `supabase/schema.sql`, y
+   después `supabase/02_dashboard_rls.sql` (políticas del dashboard).
 3. Da de alta a tus vendedores (puedes hacerlo desde **Table Editor > agentes**):
    ```sql
    insert into agentes (nombre, telefono, rol) values
      ('Juan Pérez', '+5215511111111', 'vendedor'),
      ('Ana López', '+5215522222222', 'vendedor');
    ```
-4. Copia de **Project Settings > API**: la URL del proyecto y la
-   `service_role` key (para el `.env`).
+4. Copia de **Project Settings > API**: la URL del proyecto, la `anon` key y
+   la `service_role` key (para el `.env`).
+5. En **Authentication > Users**, crea un usuario (email/contraseña) por cada
+   vendedor y enlázalo con su fila de `agentes`:
+   ```sql
+   update agentes set user_id = '<uuid-del-usuario>' where telefono = '+5215511111111';
+   ```
 
 ### 2. Meta / WhatsApp Cloud API
 
@@ -83,13 +93,28 @@ Escribe desde un número de prueba al número de WhatsApp de la app. Deberías
 recibir el saludo del bot, y al terminar las 4 preguntas, ver en Supabase el
 lead con `estado=asignado` y un registro en `asignaciones`.
 
+### 6. Dashboard Vendedor
+
+1. Carga `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (de `.env.example`) en
+   las variables de entorno de Netlify (son públicas, van en el bundle).
+2. Tras el deploy, el dashboard queda en `https://TU-SITIO.netlify.app/`.
+3. Cada vendedor entra con el email/contraseña que le creaste en
+   Authentication > Users (paso 1.5).
+
 ## Desarrollo local
 
 ```bash
 npm install
-npm run typecheck      # comprueba tipos
-npm run dev            # netlify dev: levanta las funciones en localhost
+npm run typecheck       # comprueba tipos del backend (netlify/functions, src/)
+npm run typecheck:web   # comprueba tipos del dashboard (web/)
+npm run dev              # netlify dev: levanta las funciones en localhost
+npm run dev:web           # vite: levanta el dashboard en localhost con recarga en vivo
 ```
+
+`npm run dev:web` necesita `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en
+`.env` (cópialo de `.env.example`). Para que el botón "Enviar" del chat
+funcione en local, corre `npm run dev` (netlify dev) en otra terminal — Vite
+no sirve las funciones serverless.
 
 Para probar el webhook en local frente a Meta necesitas un túnel HTTPS
 (`netlify dev --live` te da una URL pública temporal).
@@ -108,3 +133,14 @@ Para probar el webhook en local frente a Meta necesitas un túnel HTTPS
   `perfilando`, los mensajes solo se registran para el vendedor.
 - **Ventana de 24h**: el bot solo responde a mensajes entrantes (siempre
   dentro de ventana), así que nunca gasta plantillas de pago.
+- **Dashboard (`web/`) separado del backend (`src/`, `netlify/functions/`)**:
+  el dashboard usa la clave `anon` + RLS (lo que ve cada vendedor lo decide
+  Postgres); las funciones serverless usan `service_role`. Vite compila
+  `web/` a `public/`, que es lo que Netlify publica.
+- **Enviar mensajes pasa por `enviar-mensaje.ts`** (no directo a la Cloud API
+  desde el navegador): así el `WHATSAPP_TOKEN` nunca llega al cliente, y la
+  función valida que el lead esté asignado a quien escribe antes de mandar
+  nada.
+- **RLS de `leads` para escritura** (`supabase/02_dashboard_rls.sql`): un
+  vendedor solo puede actualizar (tomar/cerrar) los leads donde
+  `vendedor_asignado_id` sea su propio `agentes.id`.

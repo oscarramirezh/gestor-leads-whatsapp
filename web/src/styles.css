@@ -1,0 +1,258 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 1rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+/* ---------- Login ---------- */
+.login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  width: 320px;
+}
+
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.login-form input,
+.login-form button {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+}
+
+.login-form button {
+  background: #16a34a;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+/* ---------- Dashboard ---------- */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dashboard-header div {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dashboard-cuerpo {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.dashboard-bandeja {
+  width: 320px;
+  overflow-y: auto;
+  border-right: 1px solid #e5e7eb;
+  background: white;
+}
+
+.dashboard-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-chat-vacio {
+  margin: auto;
+  color: #6b7280;
+}
+
+/* ---------- Lista de leads ---------- */
+.lead-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lead-list-vacio {
+  padding: 1rem;
+  color: #6b7280;
+}
+
+.lead-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+}
+
+.lead-item:hover {
+  background: #f9fafb;
+}
+
+.lead-item.seleccionado {
+  background: #ecfdf5;
+}
+
+.lead-item-encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.lead-item-detalle {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.estado {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  background: #e5e7eb;
+}
+
+.estado-asignado {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.estado-en_gestion {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.tiempo {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.tiempo.urgente {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* ---------- Chat ---------- */
+.lead-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.lead-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.lead-chat-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.lead-chat-header p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.lead-chat-acciones button {
+  margin-left: 0.5rem;
+}
+
+.lead-chat-mensajes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mensaje {
+  max-width: 60%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: white;
+}
+
+.mensaje p {
+  margin: 0;
+}
+
+.mensaje-autor {
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.mensaje-entrante {
+  align-self: flex-start;
+}
+
+.mensaje-saliente {
+  align-self: flex-end;
+  background: #d1fae5;
+}
+
+.lead-chat-form {
+  display: flex;
+  padding: 0.75rem;
+  gap: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+}
+
+.lead-chat-form input {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+}
+
+.error {
+  color: #dc2626;
+  font-size: 0.85rem;
+}
