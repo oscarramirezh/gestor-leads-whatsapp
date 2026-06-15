@@ -11,7 +11,7 @@ Movistar. Ver [CLAUDE.md](CLAUDE.md) para el contexto completo del negocio.
 - ✅ **Asignación round-robin** — función SQL `asignar_lead` en el esquema
 - ✅ **Dashboard Vendedor** (paso 5) — [web/](web/), bandeja + chat + tomar/cerrar
 - ✅ **Vistas Capitán/Líder + métricas + alerta SLA** (paso 6) — supervisión global, reasignar leads
-- ⬜ Exportar a CSV (paso 7)
+- ✅ **Exportar a CSV** (paso 7) — botón "Exportar CSV" en la vista de supervisión
 
 Ver [GUIA.md](GUIA.md) para cómo usar el dashboard día a día y cómo dar de
 alta vendedores, capitanes y líderes.

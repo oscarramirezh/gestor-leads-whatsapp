@@ -4,6 +4,7 @@ import type { Agente, Lead } from '../lib/types';
 import { Metricas } from '../components/Metricas';
 import { LeadTable } from '../components/LeadTable';
 import { LeadChat } from '../components/LeadChat';
+import { exportarLeadsCSV } from '../lib/csv';
 
 export function Supervisor({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -94,6 +95,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
           <span>
             {agente.nombre} · {agente.rol === 'lider' ? 'Líder' : 'Capitán'}
           </span>
+          <button onClick={() => exportarLeadsCSV(leads, vendedores)}>Exportar CSV</button>
           <button onClick={() => supabase.auth.signOut()}>Salir</button>
         </div>
       </header>

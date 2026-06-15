@@ -83,6 +83,11 @@ La pantalla de supervisión tiene tres partes:
 ### 2. Tabla por vendedor
 Conversión = ganados / (ganados + perdidos) de leads cerrados. Te dice quién convierte mejor y quién tiene leads sin tocar acumulados.
 
+### Exportar CSV
+El botón **"Exportar CSV"** (arriba a la derecha) descarga todos los leads
+cargados (hasta 500, los más recientes primero) con sus datos, vendedor
+asignado y fechas — útil para subirlos a tu otro CRM o para reportes en Excel.
+
 ### 3. Tabla de leads (con filtros)
 - Pestañas: **Sin asignar**, **Sin tocar**, **En gestión**, **Cerrados**, **Todos**.
 - Clic en una fila para ver/leer la conversación (a la derecha) — puedes responder igual que un vendedor si es urgente.
