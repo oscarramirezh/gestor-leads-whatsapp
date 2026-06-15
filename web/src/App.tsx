@@ -1,6 +1,7 @@
 import { useAgente } from './lib/useAgente';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { Supervisor } from './pages/Supervisor';
 import { supabase } from './lib/supabaseClient';
 
 export function App() {
@@ -19,6 +20,10 @@ export function App() {
         <button onClick={() => supabase.auth.signOut()}>Salir</button>
       </div>
     );
+  }
+
+  if (agente.rol === 'capitan' || agente.rol === 'lider') {
+    return <Supervisor agente={agente} />;
   }
 
   return <Dashboard agente={agente} />;

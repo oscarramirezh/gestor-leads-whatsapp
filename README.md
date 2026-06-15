@@ -10,8 +10,11 @@ Movistar. Ver [CLAUDE.md](CLAUDE.md) para el contexto completo del negocio.
 - ✅ **Bot de calificación** — [src/lib/bot.ts](src/lib/bot.ts)
 - ✅ **Asignación round-robin** — función SQL `asignar_lead` en el esquema
 - ✅ **Dashboard Vendedor** (paso 5) — [web/](web/), bandeja + chat + tomar/cerrar
-- ⬜ Vistas Capitán/Líder + alerta SLA (paso 6)
+- ✅ **Vistas Capitán/Líder + métricas + alerta SLA** (paso 6) — supervisión global, reasignar leads
 - ⬜ Exportar a CSV (paso 7)
+
+Ver [GUIA.md](GUIA.md) para cómo usar el dashboard día a día y cómo dar de
+alta vendedores, capitanes y líderes.
 
 ## Cómo funciona
 
@@ -43,8 +46,8 @@ Responder en el dashboard → netlify/functions/enviar-mensaje
 ### 1. Supabase (base de datos)
 
 1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
-2. En **SQL Editor**, pega y ejecuta el contenido de `supabase/schema.sql`, y
-   después `supabase/02_dashboard_rls.sql` (políticas del dashboard).
+2. En **SQL Editor**, pega y ejecuta en orden: `supabase/schema.sql`,
+   `supabase/02_dashboard_rls.sql` y `supabase/03_supervisor_rls.sql`.
 3. Da de alta a tus vendedores (puedes hacerlo desde **Table Editor > agentes**):
    ```sql
    insert into agentes (nombre, telefono, rol) values
