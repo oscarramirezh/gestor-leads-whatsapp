@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { Logo } from '../components/Logo';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -19,7 +20,7 @@ export function Login() {
   return (
     <div className="login">
       <form onSubmit={entrar} className="login-form">
-        <h1>Gestor de Leads</h1>
+        <Logo subtitulo="Gestor de Leads" />
         <p>Inicia sesión con tu cuenta de vendedor.</p>
         <label>
           Correo

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import type { Agente, Lead } from '../lib/types';
 import { LeadList } from '../components/LeadList';
 import { LeadChat } from '../components/LeadChat';
+import { Logo } from '../components/Logo';
 
 const ESTADOS_BANDEJA = ['asignado', 'en_gestion'] as const;
 
@@ -61,7 +62,7 @@ export function Dashboard({ agente }: { agente: Agente }) {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <h1>Mis leads</h1>
+        <Logo subtitulo="Mis leads" />
         <div>
           <span>{agente.nombre}</span>
           <button onClick={() => supabase.auth.signOut()}>Salir</button>

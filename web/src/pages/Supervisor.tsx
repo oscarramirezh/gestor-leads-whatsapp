@@ -5,6 +5,7 @@ import { Metricas } from '../components/Metricas';
 import { LeadTable } from '../components/LeadTable';
 import { LeadChat } from '../components/LeadChat';
 import { exportarLeadsCSV } from '../lib/csv';
+import { Logo } from '../components/Logo';
 
 export function Supervisor({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -90,7 +91,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <h1>Supervisión</h1>
+        <Logo subtitulo="Supervisión" />
         <div>
           <span>
             {agente.nombre} · {agente.rol === 'lider' ? 'Líder' : 'Capitán'}
