@@ -44,9 +44,10 @@ interface Props {
   seleccionadoId: string | null;
   onSeleccionar: (lead: Lead) => void;
   onReasignar: (lead: Lead, nuevoVendedorId: string) => void;
+  noLeidos?: Record<string, number>;
 }
 
-export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, onReasignar }: Props) {
+export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, onReasignar, noLeidos = {} }: Props) {
   const [filtro, setFiltro] = useState<Filtro>('sin_tocar');
   const visibles = aplicarFiltro(leads, filtro);
   const nombreVendedor = (id: string | null) => vendedores.find((v) => v.id === id)?.nombre ?? '—';
@@ -84,7 +85,14 @@ export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, on
               className={lead.id === seleccionadoId ? 'seleccionada' : ''}
               onClick={() => onSeleccionar(lead)}
             >
-              <td>{lead.nombre || lead.telefono}</td>
+              <td>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                  {lead.nombre || lead.telefono}
+                  {noLeidos[lead.id] > 0 && (
+                    <span className="lead-badge">{noLeidos[lead.id]}</span>
+                  )}
+                </span>
+              </td>
               <td>{lead.producto_interes}</td>
               <td>{lead.ciudad || '—'}</td>
               <td>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import type { Agente, Lead } from '../lib/types';
 import { Metricas } from '../components/Metricas';
@@ -11,6 +11,12 @@ export function Supervisor({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [vendedores, setVendedores] = useState<Agente[]>([]);
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
+  const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
+  const seleccionadoRef = React.useRef<Lead | null>(null);
+
+  useEffect(() => {
+    seleccionadoRef.current = seleccionado;
+  }, [seleccionado]);
 
   useEffect(() => {
     let activo = true;
@@ -32,7 +38,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
         if (activo) setLeads((data as Lead[]) ?? []);
       });
 
-    const canal = supabase
+    const canalLeads = supabase
       .channel('leads-supervisor')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
         const lead = payload.new as Lead;
@@ -44,9 +50,24 @@ export function Supervisor({ agente }: { agente: Agente }) {
       })
       .subscribe();
 
+    const canalMensajes = supabase
+      .channel('mensajes-supervisor')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'conversaciones' },
+        (payload) => {
+          const msg = payload.new as { lead_id: string; direccion: string };
+          if (msg.direccion !== 'entrante') return;
+          if (seleccionadoRef.current?.id === msg.lead_id) return;
+          setNoLeidos((prev) => ({ ...prev, [msg.lead_id]: (prev[msg.lead_id] ?? 0) + 1 }));
+        },
+      )
+      .subscribe();
+
     return () => {
       activo = false;
-      supabase.removeChannel(canal);
+      supabase.removeChannel(canalLeads);
+      supabase.removeChannel(canalMensajes);
     };
   }, []);
 
@@ -108,8 +129,17 @@ export function Supervisor({ agente }: { agente: Agente }) {
               leads={leads}
               vendedores={vendedores}
               seleccionadoId={seleccionado?.id ?? null}
-              onSeleccionar={setSeleccionado}
+              onSeleccionar={(lead) => {
+                setSeleccionado(lead);
+                setNoLeidos((prev) => {
+                  if (!prev[lead.id]) return prev;
+                  const siguiente = { ...prev };
+                  delete siguiente[lead.id];
+                  return siguiente;
+                });
+              }}
               onReasignar={onReasignar}
+              noLeidos={noLeidos}
             />
           </aside>
           <main className="dashboard-chat">
