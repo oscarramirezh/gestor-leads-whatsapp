@@ -20,9 +20,10 @@ interface Props {
   leads: Lead[];
   seleccionadoId: string | null;
   onSeleccionar: (lead: Lead) => void;
+  noLeidos?: Record<string, number>;
 }
 
-export function LeadList({ leads, seleccionadoId, onSeleccionar }: Props) {
+export function LeadList({ leads, seleccionadoId, onSeleccionar, noLeidos = {} }: Props) {
   if (leads.length === 0) {
     return <p className="lead-list-vacio">No tienes leads asignados por ahora.</p>;
   }
@@ -37,7 +38,12 @@ export function LeadList({ leads, seleccionadoId, onSeleccionar }: Props) {
         >
           <div className="lead-item-encabezado">
             <strong>{lead.nombre || lead.telefono}</strong>
-            <span className={`estado estado-${lead.estado}`}>{ETIQUETA_ESTADO[lead.estado]}</span>
+            <div className="lead-item-badges">
+              {noLeidos[lead.id] > 0 && (
+                <span className="lead-badge">{noLeidos[lead.id]}</span>
+              )}
+              <span className={`estado estado-${lead.estado}`}>{ETIQUETA_ESTADO[lead.estado]}</span>
+            </div>
           </div>
           <div className="lead-item-detalle">
             <span>{ETIQUETA_PRODUCTO[lead.producto_interes]}</span>

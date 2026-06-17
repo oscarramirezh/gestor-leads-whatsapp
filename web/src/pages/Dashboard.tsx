@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import type { Agente, Lead } from '../lib/types';
 import { LeadList } from '../components/LeadList';
@@ -10,6 +10,12 @@ const ESTADOS_BANDEJA = ['asignado', 'en_gestion'] as const;
 export function Dashboard({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
+  const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
+  const seleccionadoRef = React.useRef<Lead | null>(null);
+
+  useEffect(() => {
+    seleccionadoRef.current = seleccionado;
+  }, [seleccionado]);
 
   useEffect(() => {
     let activo = true;
@@ -24,7 +30,7 @@ export function Dashboard({ agente }: { agente: Agente }) {
         if (activo) setLeads((data as Lead[]) ?? []);
       });
 
-    const canal = supabase
+    const canalLeads = supabase
       .channel(`leads-vendedor-${agente.id}`)
       .on(
         'postgres_changes',
@@ -44,11 +50,36 @@ export function Dashboard({ agente }: { agente: Agente }) {
       )
       .subscribe();
 
+    const canalMensajes = supabase
+      .channel(`mensajes-vendedor-${agente.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'conversaciones' },
+        (payload) => {
+          const msg = payload.new as { lead_id: string; direccion: string };
+          if (msg.direccion !== 'entrante') return;
+          if (seleccionadoRef.current?.id === msg.lead_id) return;
+          setNoLeidos((prev) => ({ ...prev, [msg.lead_id]: (prev[msg.lead_id] ?? 0) + 1 }));
+        },
+      )
+      .subscribe();
+
     return () => {
       activo = false;
-      supabase.removeChannel(canal);
+      supabase.removeChannel(canalLeads);
+      supabase.removeChannel(canalMensajes);
     };
   }, [agente.id]);
+
+  function onSeleccionar(lead: Lead) {
+    setSeleccionado(lead);
+    setNoLeidos((prev) => {
+      if (!prev[lead.id]) return prev;
+      const siguiente = { ...prev };
+      delete siguiente[lead.id];
+      return siguiente;
+    });
+  }
 
   function onLeadActualizado(lead: Lead) {
     setSeleccionado(lead);
@@ -70,7 +101,7 @@ export function Dashboard({ agente }: { agente: Agente }) {
       </header>
       <div className="dashboard-cuerpo">
         <aside className="dashboard-bandeja">
-          <LeadList leads={leads} seleccionadoId={seleccionado?.id ?? null} onSeleccionar={setSeleccionado} />
+          <LeadList leads={leads} seleccionadoId={seleccionado?.id ?? null} onSeleccionar={onSeleccionar} noLeidos={noLeidos} />
         </aside>
         <main className="dashboard-chat">
           {seleccionado ? (
