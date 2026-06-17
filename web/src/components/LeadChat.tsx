@@ -6,14 +6,22 @@ interface Props {
   lead: Lead;
   agente: Agente;
   onLeadActualizado: (lead: Lead) => void;
+  onVolver?: () => void;
 }
 
-export function LeadChat({ lead, agente, onLeadActualizado }: Props) {
+export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notas, setNotas] = useState(lead.notas ?? '');
+  const [guardandoNota, setGuardandoNota] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
+  const notasTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setNotas(lead.notas ?? '');
+  }, [lead.id, lead.notas]);
 
   useEffect(() => {
     let activo = true;
@@ -45,6 +53,16 @@ export function LeadChat({ lead, agente, onLeadActualizado }: Props) {
   useEffect(() => {
     finRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
+
+  function onNotasChange(valor: string) {
+    setNotas(valor);
+    if (notasTimer.current) clearTimeout(notasTimer.current);
+    notasTimer.current = setTimeout(async () => {
+      setGuardandoNota(true);
+      await supabase.from('leads').update({ notas: valor }).eq('id', lead.id);
+      setGuardandoNota(false);
+    }, 1000);
+  }
 
   async function enviarMensaje(e: React.FormEvent) {
     e.preventDefault();
@@ -106,18 +124,25 @@ export function LeadChat({ lead, agente, onLeadActualizado }: Props) {
   return (
     <div className="lead-chat">
       <header className="lead-chat-header">
-        <div>
-          <h2>{lead.nombre || lead.telefono}</h2>
-          <p>
-            {lead.telefono} · {lead.producto_interes} {lead.ciudad ? `· ${lead.ciudad}` : ''}
-          </p>
+        <div className="lead-chat-header-info">
+          {onVolver && (
+            <button className="btn-volver" onClick={onVolver} aria-label="Volver a la lista">
+              ←
+            </button>
+          )}
+          <div>
+            <h2>{lead.nombre || lead.telefono}</h2>
+            <p>
+              {lead.telefono} · {lead.producto_interes} {lead.ciudad ? `· ${lead.ciudad}` : ''}
+            </p>
+          </div>
         </div>
         <div className="lead-chat-acciones">
           {lead.estado === 'asignado' && <button onClick={tomarLead}>Tomar</button>}
           {lead.estado !== 'ganado' && lead.estado !== 'perdido' && (
             <>
-              <button onClick={() => cerrarLead('ganado')}>Marcar ganado</button>
-              <button onClick={() => cerrarLead('perdido')}>Marcar perdido</button>
+              <button onClick={() => cerrarLead('ganado')}>Ganado ✓</button>
+              <button onClick={() => cerrarLead('perdido')}>Perdido ✗</button>
             </>
           )}
         </div>
@@ -138,7 +163,7 @@ export function LeadChat({ lead, agente, onLeadActualizado }: Props) {
           type="text"
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          placeholder="Escribe un mensaje…"
+          placeholder="Escribe un mensaje al cliente…"
           disabled={enviando}
         />
         <button type="submit" disabled={enviando || !texto.trim()}>
@@ -146,6 +171,20 @@ export function LeadChat({ lead, agente, onLeadActualizado }: Props) {
         </button>
       </form>
       {error && <p className="error">{error}</p>}
+
+      <div className="lead-notas">
+        <label className="lead-notas-label">
+          📝 Notas internas
+          {guardandoNota && <span className="lead-notas-guardando">guardando…</span>}
+        </label>
+        <textarea
+          className="lead-notas-textarea"
+          value={notas}
+          onChange={(e) => onNotasChange(e.target.value)}
+          placeholder="Apuntes privados del vendedor (el cliente no los ve)…"
+          rows={3}
+        />
+      </div>
     </div>
   );
 }

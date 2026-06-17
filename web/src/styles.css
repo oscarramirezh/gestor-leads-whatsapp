@@ -343,6 +343,45 @@ button:disabled {
   font-weight: 700;
 }
 
+/* ---------- Disponibilidad ---------- */
+.header-nombre {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.btn-disponible {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.btn-disponible.activo {
+  background: #d6fcef;
+  border-color: var(--color-accent-dark);
+  color: var(--color-accent-dark);
+}
+
+.btn-disponible.pausado {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: var(--color-text-muted);
+}
+
+.punto-disponible {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 /* ---------- Chat ---------- */
 .lead-chat {
   display: flex;
@@ -358,6 +397,14 @@ button:disabled {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.lead-chat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .lead-chat-header h2 {
@@ -369,6 +416,17 @@ button:disabled {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
   color: var(--color-text-muted);
+}
+
+.btn-volver {
+  display: none;
+  font-size: 1.1rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  flex-shrink: 0;
 }
 
 .lead-chat-acciones {
@@ -454,6 +512,52 @@ button:disabled {
   color: var(--color-danger);
   font-size: 0.85rem;
   padding: 0 1.25rem 0.5rem;
+}
+
+/* ---------- Notas internas ---------- */
+.lead-notas {
+  border-top: 1px solid var(--color-border);
+  padding: 0.65rem 1.25rem;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.lead-notas-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lead-notas-guardando {
+  font-weight: 400;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.lead-notas-textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  line-height: 1.5;
+}
+
+.lead-notas-textarea:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 /* ---------- Supervisor ---------- */
@@ -630,4 +734,103 @@ button:disabled {
   padding: 0.2rem;
   border-radius: 0.25rem;
   border: 1px solid var(--color-border);
+}
+
+/* ---------- Responsive móvil ---------- */
+@media (max-width: 640px) {
+  /* Header más compacto */
+  .dashboard-header {
+    padding: 0.5rem 0.85rem;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .logo-texto strong {
+    font-size: 0.9rem;
+  }
+
+  .logo-texto small {
+    display: none;
+  }
+
+  .header-nombre {
+    display: none;
+  }
+
+  /* Layout principal: una columna */
+  .dashboard-cuerpo {
+    flex-direction: column;
+  }
+
+  .dashboard-bandeja {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  /* Mostrar solo una sección a la vez en móvil */
+  .oculto-movil {
+    display: none !important;
+  }
+
+  /* Botón volver visible en móvil */
+  .btn-volver {
+    display: inline-flex;
+  }
+
+  /* Chat ocupa toda la pantalla en móvil */
+  .dashboard-chat {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Acciones del chat en móvil: más pequeñas */
+  .lead-chat-acciones {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .lead-chat-acciones button {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  /* Mensajes: burbujas más anchas en móvil */
+  .mensaje {
+    max-width: 85%;
+  }
+
+  /* Supervisor: tabla scrollable */
+  .dashboard-bandeja-ancha {
+    width: 100%;
+  }
+
+  .lead-table {
+    font-size: 0.78rem;
+  }
+
+  .lead-table th,
+  .lead-table td {
+    padding: 0.35rem 0.4rem;
+  }
+
+  /* Métricas: scroll horizontal */
+  .metricas-tarjetas {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .tarjeta {
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+
+  /* Login centrado */
+  .login-form {
+    width: 90vw;
+    padding: 1.5rem;
+  }
 }

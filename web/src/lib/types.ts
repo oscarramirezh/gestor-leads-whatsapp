@@ -31,6 +31,7 @@ export interface Lead {
   primer_toque_humano_en: string | null;
   cerrado_en: string | null;
   motivo_perdida: string | null;
+  notas: string | null;
 }
 
 export interface Mensaje {

@@ -11,6 +11,8 @@ export function Dashboard({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
+  const [disponible, setDisponible] = useState(agente.disponible);
+  const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
   const seleccionadoRef = React.useRef<Lead | null>(null);
 
   useEffect(() => {
@@ -73,12 +75,19 @@ export function Dashboard({ agente }: { agente: Agente }) {
 
   function onSeleccionar(lead: Lead) {
     setSeleccionado(lead);
+    setVistaMovil('chat');
     setNoLeidos((prev) => {
       if (!prev[lead.id]) return prev;
       const siguiente = { ...prev };
       delete siguiente[lead.id];
       return siguiente;
     });
+  }
+
+  async function toggleDisponible() {
+    const nuevo = !disponible;
+    setDisponible(nuevo);
+    await supabase.from('agentes').update({ disponible: nuevo }).eq('id', agente.id);
   }
 
   function onLeadActualizado(lead: Lead) {
@@ -95,17 +104,30 @@ export function Dashboard({ agente }: { agente: Agente }) {
       <header className="dashboard-header">
         <Logo subtitulo="Mis leads" />
         <div>
-          <span>{agente.nombre}</span>
+          <button
+            className={`btn-disponible ${disponible ? 'activo' : 'pausado'}`}
+            onClick={toggleDisponible}
+            title={disponible ? 'Estás recibiendo leads — clic para pausar' : 'Pausado — clic para activar'}
+          >
+            <span className="punto-disponible" />
+            {disponible ? 'Disponible' : 'Pausado'}
+          </button>
+          <span className="header-nombre">{agente.nombre}</span>
           <button onClick={() => supabase.auth.signOut()}>Salir</button>
         </div>
       </header>
       <div className="dashboard-cuerpo">
-        <aside className="dashboard-bandeja">
+        <aside className={`dashboard-bandeja${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}>
           <LeadList leads={leads} seleccionadoId={seleccionado?.id ?? null} onSeleccionar={onSeleccionar} noLeidos={noLeidos} />
         </aside>
-        <main className="dashboard-chat">
+        <main className={`dashboard-chat${vistaMovil === 'lista' ? ' oculto-movil' : ''}`}>
           {seleccionado ? (
-            <LeadChat lead={seleccionado} agente={agente} onLeadActualizado={onLeadActualizado} />
+            <LeadChat
+              lead={seleccionado}
+              agente={agente}
+              onLeadActualizado={onLeadActualizado}
+              onVolver={() => setVistaMovil('lista')}
+            />
           ) : (
             <p className="dashboard-chat-vacio">Selecciona un lead de la lista.</p>
           )}
