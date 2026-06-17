@@ -15,7 +15,8 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notas, setNotas] = useState(lead.notas ?? '');
-  const [guardandoNota, setGuardandoNota] = useState(false);
+  const [notasGuardando, setNotasGuardando] = useState(false);
+  const [mostrarNotas, setMostrarNotas] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
   const notasTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -54,13 +55,13 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     finRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
 
-  function onNotasChange(valor: string) {
+  function onCambiarNotas(valor: string) {
     setNotas(valor);
     if (notasTimer.current) clearTimeout(notasTimer.current);
     notasTimer.current = setTimeout(async () => {
-      setGuardandoNota(true);
+      setNotasGuardando(true);
       await supabase.from('leads').update({ notas: valor }).eq('id', lead.id);
-      setGuardandoNota(false);
+      setNotasGuardando(false);
     }, 1000);
   }
 
@@ -121,32 +122,58 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     if (!error && data) onLeadActualizado(data as Lead);
   }
 
+  const cerrado = lead.estado === 'ganado' || lead.estado === 'perdido';
+
   return (
     <div className="lead-chat">
       <header className="lead-chat-header">
-        <div className="lead-chat-header-info">
+        <div className="lead-chat-header-izq">
           {onVolver && (
-            <button className="btn-volver" onClick={onVolver} aria-label="Volver a la lista">
+            <button className="btn-volver" onClick={onVolver} aria-label="Volver">
               ←
             </button>
           )}
           <div>
             <h2>{lead.nombre || lead.telefono}</h2>
             <p>
-              {lead.telefono} · {lead.producto_interes} {lead.ciudad ? `· ${lead.ciudad}` : ''}
+              {lead.telefono}
+              {lead.producto_interes !== 'indefinido' && ` · ${lead.producto_interes}`}
+              {lead.ciudad && ` · ${lead.ciudad}`}
             </p>
           </div>
         </div>
         <div className="lead-chat-acciones">
+          <button
+            className={`btn-notas${mostrarNotas ? ' activo' : ''}`}
+            onClick={() => setMostrarNotas((v) => !v)}
+            title="Notas internas"
+          >
+            📝
+          </button>
           {lead.estado === 'asignado' && <button onClick={tomarLead}>Tomar</button>}
-          {lead.estado !== 'ganado' && lead.estado !== 'perdido' && (
+          {!cerrado && (
             <>
-              <button onClick={() => cerrarLead('ganado')}>Ganado ✓</button>
-              <button onClick={() => cerrarLead('perdido')}>Perdido ✗</button>
+              <button className="btn-ganado" onClick={() => cerrarLead('ganado')}>✓</button>
+              <button className="btn-perdido" onClick={() => cerrarLead('perdido')}>✗</button>
             </>
           )}
         </div>
       </header>
+
+      {mostrarNotas && (
+        <div className="notas-panel">
+          <div className="notas-panel-titulo">
+            Notas internas {notasGuardando && <span className="notas-guardando">Guardando…</span>}
+          </div>
+          <textarea
+            className="notas-textarea"
+            value={notas}
+            onChange={(e) => onCambiarNotas(e.target.value)}
+            placeholder="Apuntes privados (no le llegan al cliente)…"
+            rows={3}
+          />
+        </div>
+      )}
 
       <div className="lead-chat-mensajes">
         {mensajes.map((m) => (
@@ -158,33 +185,21 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
         <div ref={finRef} />
       </div>
 
-      <form onSubmit={enviarMensaje} className="lead-chat-form">
-        <input
-          type="text"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          placeholder="Escribe un mensaje al cliente…"
-          disabled={enviando}
-        />
-        <button type="submit" disabled={enviando || !texto.trim()}>
-          Enviar
-        </button>
-      </form>
+      {!cerrado && (
+        <form onSubmit={enviarMensaje} className="lead-chat-form">
+          <input
+            type="text"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Escribe un mensaje…"
+            disabled={enviando}
+          />
+          <button type="submit" disabled={enviando || !texto.trim()}>
+            Enviar
+          </button>
+        </form>
+      )}
       {error && <p className="error">{error}</p>}
-
-      <div className="lead-notas">
-        <label className="lead-notas-label">
-          📝 Notas internas
-          {guardandoNota && <span className="lead-notas-guardando">guardando…</span>}
-        </label>
-        <textarea
-          className="lead-notas-textarea"
-          value={notas}
-          onChange={(e) => onNotasChange(e.target.value)}
-          placeholder="Apuntes privados del vendedor (el cliente no los ve)…"
-          rows={3}
-        />
-      </div>
     </div>
   );
 }
