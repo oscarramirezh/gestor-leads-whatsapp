@@ -91,7 +91,10 @@ export function Supervisor({ agente }: { agente: Agente }) {
       .select()
       .single();
 
-    if (error || !data) return;
+    if (error || !data) {
+      alert(`No se pudo reasignar: ${error?.message ?? 'sin datos'}. Verifica que tu usuario tenga rol capitan o lider con user_id vinculado en la tabla agentes.`);
+      return;
+    }
     onLeadActualizado(data as Lead);
 
     if (vendedorId) {
