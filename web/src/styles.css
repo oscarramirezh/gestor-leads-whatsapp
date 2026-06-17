@@ -110,6 +110,18 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 }
 .login-form button[type='submit']:hover { background: var(--color-accent-dark); color: white; }
 
+.input-password-wrap {
+  position: relative; display: flex; align-items: center;
+}
+.input-password-wrap input { flex: 1; padding-right: 2.5rem; }
+.btn-ojo {
+  position: absolute; right: 0.4rem;
+  background: none; border: none; padding: 0.2rem 0.35rem;
+  font-size: 1rem; cursor: pointer; color: var(--color-text-muted);
+  line-height: 1;
+}
+.btn-ojo:hover { background: none; border: none; color: var(--color-text); }
+
 /* ---------- Dashboard ---------- */
 .dashboard { display: flex; flex-direction: column; height: 100dvh; }
 
@@ -328,7 +340,7 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 
 /* ---------- Supervisor ---------- */
 .supervisor-cuerpo { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-.dashboard-bandeja-ancha { width: 580px; min-width: 580px; }
+.dashboard-bandeja-ancha { width: 420px; min-width: 420px; }
 
 /* ---------- Métricas ---------- */
 .metricas {

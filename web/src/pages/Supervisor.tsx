@@ -12,6 +12,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
   const [vendedores, setVendedores] = useState<Agente[]>([]);
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
+  const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
   const seleccionadoRef = React.useRef<Lead | null>(null);
 
   useEffect(() => {
@@ -127,13 +128,14 @@ export function Supervisor({ agente }: { agente: Agente }) {
       <div className="supervisor-cuerpo">
         <Metricas leads={leads} vendedores={vendedores} />
         <div className="dashboard-cuerpo">
-          <aside className="dashboard-bandeja dashboard-bandeja-ancha">
+          <aside className={`dashboard-bandeja dashboard-bandeja-ancha${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}>
             <LeadTable
               leads={leads}
               vendedores={vendedores}
               seleccionadoId={seleccionado?.id ?? null}
               onSeleccionar={(lead) => {
                 setSeleccionado(lead);
+                setVistaMovil('chat');
                 setNoLeidos((prev) => {
                   if (!prev[lead.id]) return prev;
                   const siguiente = { ...prev };
@@ -145,9 +147,14 @@ export function Supervisor({ agente }: { agente: Agente }) {
               noLeidos={noLeidos}
             />
           </aside>
-          <main className="dashboard-chat">
+          <main className={`dashboard-chat${vistaMovil === 'lista' ? ' oculto-movil' : ''}`}>
             {seleccionado ? (
-              <LeadChat lead={seleccionado} agente={agente} onLeadActualizado={onLeadActualizado} />
+              <LeadChat
+                lead={seleccionado}
+                agente={agente}
+                onLeadActualizado={onLeadActualizado}
+                onVolver={() => setVistaMovil('lista')}
+              />
             ) : (
               <p className="dashboard-chat-vacio">Selecciona un lead de la lista.</p>
             )}

@@ -7,6 +7,7 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [verPassword, setVerPassword] = useState(false);
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault();
@@ -34,12 +35,22 @@ export function Login() {
         </label>
         <label>
           Contraseña
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="input-password-wrap">
+            <input
+              type={verPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="btn-ojo"
+              onClick={() => setVerPassword((v) => !v)}
+              aria-label={verPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+            >
+              {verPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
         </label>
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={cargando}>
