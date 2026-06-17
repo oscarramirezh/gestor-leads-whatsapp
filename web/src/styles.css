@@ -353,15 +353,28 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .btn-adjuntar:hover { background: var(--color-bg); border: none; color: var(--color-text); }
 
 .imagen-preview {
-  display: flex; align-items: flex-start; gap: 0.75rem;
+  display: flex; flex-direction: column; gap: 0.6rem;
   padding: 0.65rem 0.75rem;
   background: #f0fdf4; border-top: 1px solid #bbf7d0;
   flex-shrink: 0;
 }
+.imagen-preview-fila {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+}
+.imagen-preview-item {
+  position: relative;
+}
 .imagen-preview-thumb {
   width: 64px; height: 64px; object-fit: cover;
-  border-radius: var(--radius-sm); flex-shrink: 0;
+  border-radius: var(--radius-sm); display: block;
   border: 1px solid var(--color-border);
+}
+.btn-quitar-img {
+  position: absolute; top: -6px; right: -6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #ef4444; color: #fff; border: none;
+  font-size: 0.6rem; line-height: 1; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
 }
 .imagen-preview-controles {
   display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-width: 0;

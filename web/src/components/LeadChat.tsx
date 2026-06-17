@@ -18,9 +18,10 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [notasGuardando, setNotasGuardando] = useState(false);
   const [mostrarNotas, setMostrarNotas] = useState(false);
   const [reactivando, setReactivando] = useState(false);
-  const [imagen, setImagen] = useState<{ base64: string; mime: string; preview: string } | null>(null);
+  const [imagenes, setImagenes] = useState<{ base64: string; mime: string; preview: string }[]>([]);
   const [caption, setCaption] = useState('');
   const [enviandoImg, setEnviandoImg] = useState(false);
+  const [progresoImg, setProgresoImg] = useState('');
   const finRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const notasTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,40 +72,58 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   }
 
   function onPickImagen(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const base64 = dataUrl.split(',')[1];
-      setImagen({ base64, mime: file.type, preview: dataUrl });
-      setCaption('');
-    };
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const base64 = dataUrl.split(',')[1];
+        setImagenes((prev) => [...prev, { base64, mime: file.type, preview: dataUrl }]);
+      };
+      reader.readAsDataURL(file);
+    });
     e.target.value = '';
   }
 
-  async function enviarImagen() {
-    if (!imagen) return;
+  function quitarImagen(idx: number) {
+    setImagenes((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function enviarImagenes() {
+    if (!imagenes.length) return;
     setEnviandoImg(true);
     setError(null);
     const { data: sesion } = await supabase.auth.getSession();
-    const res = await fetch('/.netlify/functions/enviar-imagen', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${sesion.session?.access_token}`,
-      },
-      body: JSON.stringify({ lead_id: lead.id, imageBase64: imagen.base64, mimeType: imagen.mime, caption }),
-    });
-    setEnviandoImg(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setError(data?.error ?? 'No se pudo enviar la imagen');
-    } else {
-      setImagen(null);
-      setCaption('');
+    for (let i = 0; i < imagenes.length; i++) {
+      const img = imagenes[i];
+      setProgresoImg(`Enviando ${i + 1} de ${imagenes.length}…`);
+      const isLast = i === imagenes.length - 1;
+      const res = await fetch('/.netlify/functions/enviar-imagen', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sesion.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          lead_id: lead.id,
+          imageBase64: img.base64,
+          mimeType: img.mime,
+          caption: isLast && caption.trim() ? caption.trim() : '',
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(`Error en imagen ${i + 1}: ${data?.error ?? 'No se pudo enviar'}`);
+        setEnviandoImg(false);
+        setProgresoImg('');
+        return;
+      }
     }
+    setEnviandoImg(false);
+    setProgresoImg('');
+    setImagenes([]);
+    setCaption('');
   }
 
   async function reactivarLead() {
@@ -267,22 +286,36 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
 
       {!cerrado && (
         <>
-          {imagen && (
+          {imagenes.length > 0 && (
             <div className="imagen-preview">
-              <img src={imagen.preview} alt="preview" className="imagen-preview-thumb" />
+              <div className="imagen-preview-fila">
+                {imagenes.map((img, idx) => (
+                  <div key={idx} className="imagen-preview-item">
+                    <img src={img.preview} alt={`imagen ${idx + 1}`} className="imagen-preview-thumb" />
+                    <button
+                      className="btn-quitar-img"
+                      onClick={() => quitarImagen(idx)}
+                      disabled={enviandoImg}
+                      title="Quitar imagen"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
               <div className="imagen-preview-controles">
                 <input
                   type="text"
                   className="imagen-caption-input"
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  placeholder="Texto opcional (pie de foto)…"
+                  placeholder="Texto opcional en última imagen…"
                   disabled={enviandoImg}
                 />
-                <button className="btn-enviar-img" onClick={enviarImagen} disabled={enviandoImg}>
-                  {enviandoImg ? 'Enviando…' : 'Enviar imagen'}
+                <button className="btn-enviar-img" onClick={enviarImagenes} disabled={enviandoImg}>
+                  {enviandoImg ? progresoImg : `Enviar ${imagenes.length > 1 ? `${imagenes.length} imágenes` : 'imagen'}`}
                 </button>
-                <button className="btn-cancelar-img" onClick={() => setImagen(null)} disabled={enviandoImg}>
+                <button className="btn-cancelar-img" onClick={() => { setImagenes([]); setCaption(''); }} disabled={enviandoImg}>
                   Cancelar
                 </button>
               </div>
@@ -293,6 +326,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               ref={fileRef}
               type="file"
               accept="image/*"
+              multiple
               style={{ display: 'none' }}
               onChange={onPickImagen}
             />
