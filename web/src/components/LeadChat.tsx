@@ -17,6 +17,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [notas, setNotas] = useState(lead.notas ?? '');
   const [notasGuardando, setNotasGuardando] = useState(false);
   const [mostrarNotas, setMostrarNotas] = useState(false);
+  const [reactivando, setReactivando] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
   const notasTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -63,6 +64,31 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       await supabase.from('leads').update({ notas: valor }).eq('id', lead.id);
       setNotasGuardando(false);
     }, 1000);
+  }
+
+  async function reactivarLead() {
+    const confirmar = window.confirm(
+      `¿Enviar plantilla de reactivación a ${lead.nombre || lead.telefono}?\n\n` +
+      `Tiene un costo ~$0.05 USD por mensaje.\n` +
+      `Úsala solo si el cliente no respondió y han pasado más de 24 horas.`,
+    );
+    if (!confirmar) return;
+    setReactivando(true);
+    setError(null);
+    const { data: sesion } = await supabase.auth.getSession();
+    const res = await fetch('/.netlify/functions/enviar-plantilla', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sesion.session?.access_token}`,
+      },
+      body: JSON.stringify({ lead_id: lead.id }),
+    });
+    setReactivando(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? 'No se pudo enviar la plantilla');
+    }
   }
 
   async function enviarMensaje(e: React.FormEvent) {
@@ -123,6 +149,9 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   }
 
   const cerrado = lead.estado === 'ganado' || lead.estado === 'perdido';
+  const sinTocarMas24h =
+    !lead.primer_toque_humano_en &&
+    Date.now() - new Date(lead.creado_en).getTime() > 24 * 60 * 60 * 1000;
 
   return (
     <div className="lead-chat">
@@ -156,6 +185,16 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               <button className="btn-ganado" onClick={() => cerrarLead('ganado')}>✓</button>
               <button className="btn-perdido" onClick={() => cerrarLead('perdido')}>✗</button>
             </>
+          )}
+          {sinTocarMas24h && !cerrado && (
+            <button
+              className="btn-reactivar"
+              onClick={reactivarLead}
+              disabled={reactivando}
+              title="Enviar plantilla de reactivación (tiene costo ~$0.05 USD)"
+            >
+              {reactivando ? '…' : '↩️ Reactivar'}
+            </button>
           )}
         </div>
       </header>

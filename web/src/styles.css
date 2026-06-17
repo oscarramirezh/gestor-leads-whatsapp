@@ -258,6 +258,12 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .btn-notas { padding: 0.35rem 0.6rem; font-size: 0.85rem; }
 .btn-notas.activo { background: #fef9c3; border-color: #fbbf24; }
 
+.btn-reactivar {
+  background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8;
+  padding: 0.35rem 0.65rem; font-size: 0.78rem;
+}
+.btn-reactivar:hover { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; }
+
 .btn-ganado {
   background: #dcfce7; border-color: #86efac; color: #166534;
   padding: 0.35rem 0.65rem; font-weight: 700;

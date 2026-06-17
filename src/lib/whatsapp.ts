@@ -48,6 +48,28 @@ export function enviarTexto(telefono: string, texto: string) {
 }
 
 /**
+ * Plantilla de reenganche para leads fuera de la ventana de 24h.
+ * Requiere que la plantilla "reenganche_lead" esté aprobada en Meta.
+ */
+export function enviarPlantillaReenganche(telefono: string, nombreCliente: string) {
+  return llamarGraphApi({
+    messaging_product: 'whatsapp',
+    to: telefono,
+    type: 'template',
+    template: {
+      name: 'reenganche_lead',
+      language: { code: 'es_MX' },
+      components: [
+        {
+          type: 'body',
+          parameters: [{ type: 'text', text: nombreCliente || 'Cliente' }],
+        },
+      ],
+    },
+  });
+}
+
+/**
  * Mensaje con botones de respuesta rápida (máximo 3 botones, título de 20
  * caracteres máx.). El cliente toca un botón y el webhook recibe el `id`.
  */
