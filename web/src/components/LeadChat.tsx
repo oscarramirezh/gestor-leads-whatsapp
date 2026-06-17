@@ -18,7 +18,11 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [notasGuardando, setNotasGuardando] = useState(false);
   const [mostrarNotas, setMostrarNotas] = useState(false);
   const [reactivando, setReactivando] = useState(false);
+  const [imagen, setImagen] = useState<{ base64: string; mime: string; preview: string } | null>(null);
+  const [caption, setCaption] = useState('');
+  const [enviandoImg, setEnviandoImg] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const notasTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -64,6 +68,43 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       await supabase.from('leads').update({ notas: valor }).eq('id', lead.id);
       setNotasGuardando(false);
     }, 1000);
+  }
+
+  function onPickImagen(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.split(',')[1];
+      setImagen({ base64, mime: file.type, preview: dataUrl });
+      setCaption('');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  async function enviarImagen() {
+    if (!imagen) return;
+    setEnviandoImg(true);
+    setError(null);
+    const { data: sesion } = await supabase.auth.getSession();
+    const res = await fetch('/.netlify/functions/enviar-imagen', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sesion.session?.access_token}`,
+      },
+      body: JSON.stringify({ lead_id: lead.id, imageBase64: imagen.base64, mimeType: imagen.mime, caption }),
+    });
+    setEnviandoImg(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? 'No se pudo enviar la imagen');
+    } else {
+      setImagen(null);
+      setCaption('');
+    }
   }
 
   async function reactivarLead() {
@@ -225,18 +266,56 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       </div>
 
       {!cerrado && (
-        <form onSubmit={enviarMensaje} className="lead-chat-form">
-          <input
-            type="text"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Escribe un mensaje…"
-            disabled={enviando}
-          />
-          <button type="submit" disabled={enviando || !texto.trim()}>
-            Enviar
-          </button>
-        </form>
+        <>
+          {imagen && (
+            <div className="imagen-preview">
+              <img src={imagen.preview} alt="preview" className="imagen-preview-thumb" />
+              <div className="imagen-preview-controles">
+                <input
+                  type="text"
+                  className="imagen-caption-input"
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  placeholder="Texto opcional (pie de foto)…"
+                  disabled={enviandoImg}
+                />
+                <button className="btn-enviar-img" onClick={enviarImagen} disabled={enviandoImg}>
+                  {enviandoImg ? 'Enviando…' : 'Enviar imagen'}
+                </button>
+                <button className="btn-cancelar-img" onClick={() => setImagen(null)} disabled={enviandoImg}>
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+          <form onSubmit={enviarMensaje} className="lead-chat-form">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={onPickImagen}
+            />
+            <button
+              type="button"
+              className="btn-adjuntar"
+              onClick={() => fileRef.current?.click()}
+              title="Enviar imagen"
+            >
+              🖼️
+            </button>
+            <input
+              type="text"
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="Escribe un mensaje…"
+              disabled={enviando}
+            />
+            <button type="submit" disabled={enviando || !texto.trim()}>
+              Enviar
+            </button>
+          </form>
+        </>
       )}
       {error && <p className="error">{error}</p>}
     </div>
