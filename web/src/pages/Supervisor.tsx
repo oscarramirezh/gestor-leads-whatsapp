@@ -13,7 +13,29 @@ export function Supervisor({ agente }: { agente: Agente }) {
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
   const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
+  const [sidebarWidth, setSidebarWidth] = useState(420);
   const seleccionadoRef = React.useRef<Lead | null>(null);
+
+  function onResizerMouseDown(e: React.MouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sidebarWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev: MouseEvent) {
+      const next = Math.max(280, Math.min(680, startW + ev.clientX - startX));
+      setSidebarWidth(next);
+    }
+    function onUp() {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
 
   useEffect(() => {
     seleccionadoRef.current = seleccionado;
@@ -128,7 +150,10 @@ export function Supervisor({ agente }: { agente: Agente }) {
       <div className="supervisor-cuerpo">
         <Metricas leads={leads} vendedores={vendedores} />
         <div className="dashboard-cuerpo">
-          <aside className={`dashboard-bandeja dashboard-bandeja-ancha${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}>
+          <aside
+            className={`dashboard-bandeja dashboard-bandeja-ancha${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}
+            style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+          >
             <LeadTable
               leads={leads}
               vendedores={vendedores}
@@ -147,6 +172,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
               noLeidos={noLeidos}
             />
           </aside>
+          <div className="resizer oculto-movil" onMouseDown={onResizerMouseDown} />
           <main className={`dashboard-chat${vistaMovil === 'lista' ? ' oculto-movil' : ''}`}>
             {seleccionado ? (
               <LeadChat

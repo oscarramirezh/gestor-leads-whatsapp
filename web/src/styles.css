@@ -338,6 +338,29 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 
 .error { color: var(--color-danger); font-size: 0.85rem; padding: 0 1rem 0.5rem; }
 
+/* ---------- Resizer ---------- */
+.resizer {
+  width: 5px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: var(--color-border);
+  transition: background 0.15s;
+  position: relative;
+}
+.resizer:hover { background: var(--color-accent); }
+.resizer::after {
+  content: '⋮';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  line-height: 1;
+}
+.resizer:hover::after { color: var(--color-accent-dark); }
+
 /* ---------- Supervisor ---------- */
 .supervisor-cuerpo { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .dashboard-bandeja-ancha { width: 420px; min-width: 420px; }

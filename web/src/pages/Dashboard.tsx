@@ -13,7 +13,29 @@ export function Dashboard({ agente }: { agente: Agente }) {
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
   const [disponible, setDisponible] = useState(agente.disponible);
   const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
+  const [sidebarWidth, setSidebarWidth] = useState(300);
   const seleccionadoRef = React.useRef<Lead | null>(null);
+
+  function onResizerMouseDown(e: React.MouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sidebarWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev: MouseEvent) {
+      const next = Math.max(200, Math.min(520, startW + ev.clientX - startX));
+      setSidebarWidth(next);
+    }
+    function onUp() {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
 
   useEffect(() => {
     seleccionadoRef.current = seleccionado;
@@ -117,9 +139,13 @@ export function Dashboard({ agente }: { agente: Agente }) {
         </div>
       </header>
       <div className="dashboard-cuerpo">
-        <aside className={`dashboard-bandeja${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}>
+        <aside
+          className={`dashboard-bandeja${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}
+          style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+        >
           <LeadList leads={leads} seleccionadoId={seleccionado?.id ?? null} onSeleccionar={onSeleccionar} noLeidos={noLeidos} />
         </aside>
+        <div className="resizer oculto-movil" onMouseDown={onResizerMouseDown} />
         <main className={`dashboard-chat${vistaMovil === 'lista' ? ' oculto-movil' : ''}`}>
           {seleccionado ? (
             <LeadChat
