@@ -11,6 +11,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [vendedores, setVendedores] = useState<Agente[]>([]);
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
+  const [metricasAbiertas, setMetricasAbiertas] = useState(true);
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
   const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
   const [sidebarWidth, setSidebarWidth] = useState(420);
@@ -47,7 +48,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
     supabase
       .from('agentes')
       .select('*')
-      .eq('rol', 'vendedor')
+      .in('rol', ['vendedor', 'capitan'])
       .then(({ data }) => {
         if (activo) setVendedores((data as Agente[]) ?? []);
       });
@@ -148,7 +149,17 @@ export function Supervisor({ agente }: { agente: Agente }) {
         </div>
       </header>
       <div className="supervisor-cuerpo">
-        <Metricas leads={leads} vendedores={vendedores} />
+        {agente.rol === 'lider' && (
+          <div className="metricas-collapsible">
+            <button
+              className="metricas-toggle"
+              onClick={() => setMetricasAbiertas((v) => !v)}
+            >
+              {metricasAbiertas ? '▾' : '▸'} Estadísticas del equipo
+            </button>
+            {metricasAbiertas && <Metricas leads={leads} vendedores={vendedores} />}
+          </div>
+        )}
         <div className="dashboard-cuerpo">
           <aside
             className={`dashboard-bandeja dashboard-bandeja-ancha${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}

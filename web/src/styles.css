@@ -424,11 +424,20 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .dashboard-bandeja-ancha { width: 420px; min-width: 420px; }
 
 /* ---------- Métricas ---------- */
-.metricas {
-  padding: 0.75rem 1rem;
+.metricas-collapsible {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
+}
+.metricas-toggle {
+  width: 100%; text-align: left;
+  padding: 0.55rem 1rem; font-size: 0.85rem; font-weight: 600;
+  background: none; border: none; color: var(--color-text-muted);
+  cursor: pointer; display: flex; align-items: center; gap: 0.4rem;
+}
+.metricas-toggle:hover { color: var(--color-accent); background: none; }
+.metricas {
+  padding: 0.75rem 1rem;
 }
 .metricas-tarjetas {
   display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.6rem;

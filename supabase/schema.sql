@@ -107,7 +107,7 @@ declare
 begin
   select a.id into v_agente_id
   from agentes a
-  where a.rol = 'vendedor'
+  where a.rol in ('vendedor', 'capitan')
     and a.disponible = true
   order by
     (select max(s.asignado_en) from asignaciones s where s.agente_id = a.id) asc nulls first,
