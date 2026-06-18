@@ -120,6 +120,7 @@ async function procesarMensaje(mensaje: any, contacto: any) {
     .maybeSingle();
 
   const esNuevo = !lead;
+  let asignadoEsteRequest = false;
   if (!lead) {
     // El anuncio click-to-WhatsApp llega en mensaje.referral: ahí viene qué
     // anuncio trajo al cliente (clave para medir qué creativo funciona).
@@ -148,6 +149,28 @@ async function procesarMensaje(mensaje: any, contacto: any) {
       tipo_evento: 'lead_creado',
       payload: { fuente_anuncio: fuente, tipo_mensaje: tipo },
     });
+
+    // Asignar inmediatamente al entrar, sin esperar a que termine el bot.
+    const { data: agenteId, error: errorAsig } = await supabase.rpc('asignar_lead', {
+      p_lead_id: lead.id,
+    });
+    if (errorAsig) {
+      console.error('Error en asignar_lead (inmediato):', errorAsig);
+    } else {
+      asignadoEsteRequest = true;
+      console.log(
+        agenteId
+          ? `Lead ${lead.id} asignado al agente ${agenteId} al entrar`
+          : `Lead ${lead.id} SIN asignar: no hay agentes disponibles`,
+      );
+      // Recargar lead para tener vendedor_asignado_id actualizado.
+      const { data: leadActualizado } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', lead.id)
+        .single();
+      if (leadActualizado) lead = leadActualizado;
+    }
   }
 
   // 2. Registrar el mensaje entrante. El unique de wa_message_id nos protege
@@ -191,24 +214,15 @@ async function procesarMensaje(mensaje: any, contacto: any) {
     await enviarRespuestaBot(lead.id, telefono, respuesta);
   }
 
-  // 5. Bot terminado -> asignación round-robin (función SQL transaccional).
+  // 5. Bot terminado -> solo registrar evento (la asignación ya ocurrió al entrar).
   if (resultado.terminado) {
     await supabase.from('eventos').insert({ lead_id: lead.id, tipo_evento: 'bot_terminado' });
-
-    const { data: agenteId, error } = await supabase.rpc('asignar_lead', {
-      p_lead_id: lead.id,
-    });
-    if (error) {
-      console.error('Error en asignar_lead:', error);
-      return;
+    // Si por alguna razón no se asignó al entrar (no había agentes disponibles), intentar ahora.
+    if (!asignadoEsteRequest && !lead.vendedor_asignado_id) {
+      const { data: agenteId, error } = await supabase.rpc('asignar_lead', { p_lead_id: lead.id });
+      if (error) console.error('Error en asignar_lead (fallback):', error);
+      else console.log(agenteId ? `Lead ${lead.id} asignado (fallback) a ${agenteId}` : `Lead ${lead.id} sin asignar`);
     }
-    // La notificación al vendedor llega sola: el dashboard está suscrito por
-    // Supabase Realtime a los cambios de `leads` (paso 5 del plan).
-    console.log(
-      agenteId
-        ? `Lead ${lead.id} asignado al agente ${agenteId}`
-        : `Lead ${lead.id} SIN asignar: no hay vendedores disponibles`,
-    );
   }
 }
 

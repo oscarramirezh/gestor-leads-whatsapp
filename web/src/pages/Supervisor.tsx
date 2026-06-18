@@ -11,7 +11,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [vendedores, setVendedores] = useState<Agente[]>([]);
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
-  const [metricasAbiertas, setMetricasAbiertas] = useState(true);
+  const [metricasAbiertas, setMetricasAbiertas] = useState(false);
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
   const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
   const [sidebarWidth, setSidebarWidth] = useState(420);
