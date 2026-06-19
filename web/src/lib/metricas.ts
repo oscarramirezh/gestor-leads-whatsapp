@@ -12,6 +12,7 @@ export interface ResumenGeneral {
 export interface ResumenVendedor {
   agenteId: string;
   nombre: string;
+  disponible: boolean;
   asignados: number;
   sinTocar: number;
   enGestion: number;
@@ -72,6 +73,7 @@ export function calcularResumenPorVendedor(leads: Lead[], vendedores: Agente[]):
     return {
       agenteId: v.id,
       nombre: v.nombre,
+      disponible: v.disponible,
       asignados: propios.length,
       sinTocar: propios.filter((l) => (l.estado === 'asignado' || l.estado === 'perfilando') && !l.primer_toque_humano_en).length,
       enGestion: propios.filter((l) => l.estado === 'en_gestion').length,

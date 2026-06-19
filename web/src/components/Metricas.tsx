@@ -43,6 +43,7 @@ export function Metricas({ leads, vendedores }: { leads: Lead[]; vendedores: Age
           <thead>
             <tr>
               <th>Vendedor</th>
+              <th>Estado</th>
               <th>Asignados</th>
               <th>Sin tocar</th>
               <th>En gestión</th>
@@ -56,6 +57,11 @@ export function Metricas({ leads, vendedores }: { leads: Lead[]; vendedores: Age
             {porVendedor.map((v) => (
               <tr key={v.agenteId}>
                 <td>{v.nombre}</td>
+                <td>
+                  <span className={`badge-disponible ${v.disponible ? 'disponible' : 'pausado'}`}>
+                    {v.disponible ? '● Disponible' : '● Pausado'}
+                  </span>
+                </td>
                 <td>{v.asignados}</td>
                 <td className={v.sinTocar > 0 ? 'alerta' : ''}>{v.sinTocar}</td>
                 <td>{v.enGestion}</td>
