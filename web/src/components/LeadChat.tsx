@@ -290,7 +290,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
         <div ref={finRef} />
       </div>
 
-      {!cerrado && (
+      {true && (
         <>
           {imagenes.length > 0 && (
             <div className="imagen-preview">
