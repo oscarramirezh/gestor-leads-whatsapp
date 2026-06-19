@@ -12,6 +12,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
   const [vendedores, setVendedores] = useState<Agente[]>([]);
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
   const [metricasAbiertas, setMetricasAbiertas] = useState(false);
+  const [disponible, setDisponible] = useState(agente.disponible);
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
   const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
   const [sidebarWidth, setSidebarWidth] = useState(420);
@@ -136,11 +137,25 @@ export function Supervisor({ agente }: { agente: Agente }) {
     }
   }
 
+  async function toggleDisponible() {
+    const nuevo = !disponible;
+    setDisponible(nuevo);
+    await supabase.from('agentes').update({ disponible: nuevo }).eq('id', agente.id);
+  }
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <Logo subtitulo="Supervisión" />
         <div>
+          <button
+            className={`btn-disponible ${disponible ? 'activo' : 'pausado'}`}
+            onClick={toggleDisponible}
+            title={disponible ? 'Estás recibiendo leads — clic para pausar' : 'Pausado — clic para activar'}
+          >
+            <span className="punto-disponible" />
+            {disponible ? 'Disponible' : 'Pausado'}
+          </button>
           <span>
             {agente.nombre} · {agente.rol === 'lider' ? 'Líder' : 'Capitán'}
           </span>

@@ -9,7 +9,7 @@ import type { Handler, HandlerEvent } from '@netlify/functions';
 import * as crypto from 'node:crypto';
 import { supabase } from '../../src/lib/supabase';
 import { enviarTexto, enviarBotones } from '../../src/lib/whatsapp';
-import { avanzarBot, type EntradaBot, type RespuestaBot } from '../../src/lib/bot';
+import type { RespuestaBot } from '../../src/lib/bot';
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod === 'GET') return verificarSuscripcion(event);
@@ -195,34 +195,20 @@ async function procesarMensaje(mensaje: any, contacto: any) {
     throw errorMensaje;
   }
 
-  // 3. Si el lead ya está con un vendedor, el bot no interviene.
-  if (!esNuevo && !['nuevo', 'perfilando'].includes(lead.estado)) return;
+  // 3. Si el lead ya está con un vendedor, no responder automáticamente.
+  if (!esNuevo) return;
 
-  // Mensajes sin texto (imagen, audio...) no hacen avanzar el bot.
-  if (!texto) return;
+  // 4. Primer mensaje: solo bienvenida, sin preguntas de perfilamiento.
+  await enviarRespuestaBot(lead.id, telefono, {
+    tipo: 'texto',
+    texto: '¡Hola! 👋 Gracias por contactarnos. En un momento uno de nuestros asesores te atenderá. 😊',
+  });
 
-  // 4. Avanzar el bot de calificación.
-  const entrada: EntradaBot = { texto, botonId, nombrePerfil };
-  const resultado = avanzarBot(lead, entrada);
-
-  if (Object.keys(resultado.updates).length > 0) {
-    const { error } = await supabase.from('leads').update(resultado.updates).eq('id', lead.id);
-    if (error) throw error;
-  }
-
-  for (const respuesta of resultado.respuestas) {
-    await enviarRespuestaBot(lead.id, telefono, respuesta);
-  }
-
-  // 5. Bot terminado -> solo registrar evento (la asignación ya ocurrió al entrar).
-  if (resultado.terminado) {
-    await supabase.from('eventos').insert({ lead_id: lead.id, tipo_evento: 'bot_terminado' });
-    // Si por alguna razón no se asignó al entrar (no había agentes disponibles), intentar ahora.
-    if (!asignadoEsteRequest && !lead.vendedor_asignado_id) {
-      const { data: agenteId, error } = await supabase.rpc('asignar_lead', { p_lead_id: lead.id });
-      if (error) console.error('Error en asignar_lead (fallback):', error);
-      else console.log(agenteId ? `Lead ${lead.id} asignado (fallback) a ${agenteId}` : `Lead ${lead.id} sin asignar`);
-    }
+  // Si por alguna razón no se asignó al entrar (no había agentes disponibles), intentar ahora.
+  if (!asignadoEsteRequest && !lead.vendedor_asignado_id) {
+    const { data: agenteId, error } = await supabase.rpc('asignar_lead', { p_lead_id: lead.id });
+    if (error) console.error('Error en asignar_lead (fallback):', error);
+    else console.log(agenteId ? `Lead ${lead.id} asignado (fallback) a ${agenteId}` : `Lead ${lead.id} sin asignar`);
   }
 }
 

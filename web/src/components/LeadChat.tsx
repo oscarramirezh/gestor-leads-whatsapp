@@ -239,7 +239,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
           >
             📝
           </button>
-          {lead.estado === 'asignado' && <button onClick={tomarLead}>Tomar</button>}
+          {(lead.estado === 'asignado' || lead.estado === 'perfilando') && <button onClick={tomarLead}>Tomar</button>}
           {!cerrado && (
             <>
               <button className="btn-ganado" onClick={() => cerrarLead('ganado')}>✓</button>

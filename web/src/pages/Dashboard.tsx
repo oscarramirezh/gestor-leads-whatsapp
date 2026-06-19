@@ -5,7 +5,7 @@ import { LeadList } from '../components/LeadList';
 import { LeadChat } from '../components/LeadChat';
 import { Logo } from '../components/Logo';
 
-const ESTADOS_BANDEJA = ['asignado', 'en_gestion'] as const;
+const ESTADOS_BANDEJA = ['perfilando', 'asignado', 'en_gestion'] as const;
 
 export function Dashboard({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);

@@ -36,7 +36,7 @@ export function calcularResumenGeneral(leads: Lead[]): ResumenGeneral {
 
   for (const l of leads) {
     if (!l.vendedor_asignado_id && l.estado !== 'ganado' && l.estado !== 'perdido') sinAsignar++;
-    if (l.estado === 'asignado' && !l.primer_toque_humano_en) sinTocar++;
+    if ((l.estado === 'asignado' || l.estado === 'perfilando') && !l.primer_toque_humano_en) sinTocar++;
     if (l.estado === 'en_gestion') enGestion++;
     if (l.estado === 'ganado') ganados++;
     if (l.estado === 'perdido') perdidos++;
@@ -73,7 +73,7 @@ export function calcularResumenPorVendedor(leads: Lead[], vendedores: Agente[]):
       agenteId: v.id,
       nombre: v.nombre,
       asignados: propios.length,
-      sinTocar: propios.filter((l) => l.estado === 'asignado' && !l.primer_toque_humano_en).length,
+      sinTocar: propios.filter((l) => (l.estado === 'asignado' || l.estado === 'perfilando') && !l.primer_toque_humano_en).length,
       enGestion: propios.filter((l) => l.estado === 'en_gestion').length,
       ganados,
       perdidos,
