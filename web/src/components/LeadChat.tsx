@@ -278,7 +278,13 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
         {mensajes.map((m) => (
           <div key={m.id} className={`mensaje mensaje-${m.direccion}`}>
             <span className="mensaje-autor">{m.autor === 'agente' ? agente.nombre : m.autor}</span>
-            <p>{m.cuerpo}</p>
+            {m.tipo === 'imagen' && m.direccion === 'entrante' && m.cuerpo ? (
+              <a href={m.cuerpo} target="_blank" rel="noreferrer">
+                <img src={m.cuerpo} alt="imagen del cliente" className="mensaje-imagen" />
+              </a>
+            ) : (
+              <p>{m.cuerpo}</p>
+            )}
           </div>
         ))}
         <div ref={finRef} />

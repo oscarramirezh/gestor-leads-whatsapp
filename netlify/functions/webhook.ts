@@ -97,6 +97,8 @@ async function procesarMensaje(mensaje: any, contacto: any) {
   let texto = '';
   let botonId: string | undefined;
   let tipo = mensaje.type ?? 'desconocido';
+  let mediaUrl: string | null = null;
+
   if (mensaje.type === 'text') {
     texto = mensaje.text?.body ?? '';
   } else if (mensaje.type === 'interactive' && mensaje.interactive?.button_reply) {
@@ -104,13 +106,13 @@ async function procesarMensaje(mensaje: any, contacto: any) {
     texto = mensaje.interactive.button_reply.title ?? '';
     tipo = 'boton';
   } else if (mensaje.type === 'button' && mensaje.button) {
-    // botones de plantillas (formato distinto al interactivo)
     botonId = mensaje.button.payload;
     texto = mensaje.button.text ?? '';
     tipo = 'boton';
+  } else if (mensaje.type === 'image' && mensaje.image?.id) {
+    mediaUrl = await descargarYGuardarImagen(mensaje.image.id, mensaje.image.mime_type ?? 'image/jpeg');
+    tipo = 'imagen';
   }
-  // Imagen/audio/etc.: se registra en la conversación sin texto y el bot
-  // simplemente no avanza (la pregunta sigue pendiente).
 
   // 1. Buscar el lead por teléfono; si no existe, crearlo.
   let { data: lead } = await supabase
@@ -179,7 +181,7 @@ async function procesarMensaje(mensaje: any, contacto: any) {
   const { error: errorMensaje } = await supabase.from('conversaciones').insert({
     lead_id: lead.id,
     direccion: 'entrante',
-    cuerpo: texto || null,
+    cuerpo: mediaUrl ?? (texto || null),
     tipo,
     autor: 'cliente',
     wa_message_id: mensaje.id,
@@ -209,6 +211,48 @@ async function procesarMensaje(mensaje: any, contacto: any) {
     const { data: agenteId, error } = await supabase.rpc('asignar_lead', { p_lead_id: lead.id });
     if (error) console.error('Error en asignar_lead (fallback):', error);
     else console.log(agenteId ? `Lead ${lead.id} asignado (fallback) a ${agenteId}` : `Lead ${lead.id} sin asignar`);
+  }
+}
+
+/** Descarga una imagen de WhatsApp y la sube a Supabase Storage. Devuelve la URL pública. */
+async function descargarYGuardarImagen(mediaId: string, mimeType: string): Promise<string | null> {
+  const token = process.env.WHATSAPP_TOKEN;
+  if (!token) return null;
+
+  try {
+    // 1. Obtener la URL temporal de descarga desde Meta
+    const metaRes = await fetch(`https://graph.facebook.com/v23.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!metaRes.ok) return null;
+    const metaData: any = await metaRes.json();
+    const downloadUrl: string = metaData.url;
+    if (!downloadUrl) return null;
+
+    // 2. Descargar los bytes de la imagen
+    const imgRes = await fetch(downloadUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!imgRes.ok) return null;
+    const buffer = Buffer.from(await imgRes.arrayBuffer());
+
+    // 3. Subir a Supabase Storage (bucket: chat-media)
+    const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
+    const ruta = `entrantes/${mediaId}.${ext}`;
+    const { error } = await supabase.storage
+      .from('chat-media')
+      .upload(ruta, buffer, { contentType: mimeType, upsert: true });
+    if (error) {
+      console.error('Error subiendo imagen a Storage:', error);
+      return null;
+    }
+
+    // 4. Devolver URL pública
+    const { data } = supabase.storage.from('chat-media').getPublicUrl(ruta);
+    return data.publicUrl;
+  } catch (err) {
+    console.error('Error descargando imagen de WhatsApp:', err);
+    return null;
   }
 }
 
