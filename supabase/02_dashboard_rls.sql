@@ -12,6 +12,12 @@ create policy "vendedor actualiza sus leads asignados" on leads
   using (vendedor_asignado_id = (select id from agentes where user_id = auth.uid()))
   with check (vendedor_asignado_id = (select id from agentes where user_id = auth.uid()));
 
+-- Permite que cada agente actualice su propio campo disponible
+create policy "agente actualiza su disponibilidad" on agentes
+  for update to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
 -- ============================================================
 -- Vincular tu usuario de Supabase Auth con tu fila en `agentes`
 -- ============================================================
