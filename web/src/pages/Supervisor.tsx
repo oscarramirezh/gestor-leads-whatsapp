@@ -139,8 +139,8 @@ export function Supervisor({ agente }: { agente: Agente }) {
 
   async function toggleDisponible() {
     const nuevo = !disponible;
-    setDisponible(nuevo);
-    await supabase.from('agentes').update({ disponible: nuevo }).eq('id', agente.id);
+    const { error } = await supabase.from('agentes').update({ disponible: nuevo }).eq('id', agente.id);
+    if (!error) setDisponible(nuevo);
   }
 
   return (
@@ -148,14 +148,16 @@ export function Supervisor({ agente }: { agente: Agente }) {
       <header className="dashboard-header">
         <Logo subtitulo="Supervisión" />
         <div>
-          <button
-            className={`btn-disponible ${disponible ? 'activo' : 'pausado'}`}
-            onClick={toggleDisponible}
-            title={disponible ? 'Estás recibiendo leads — clic para pausar' : 'Pausado — clic para activar'}
-          >
-            <span className="punto-disponible" />
-            {disponible ? 'Disponible' : 'Pausado'}
-          </button>
+          {agente.rol === 'capitan' && (
+            <button
+              className={`btn-disponible ${disponible ? 'activo' : 'pausado'}`}
+              onClick={toggleDisponible}
+              title={disponible ? 'Estás recibiendo leads — clic para pausar' : 'Pausado — clic para activar'}
+            >
+              <span className="punto-disponible" />
+              {disponible ? 'Disponible' : 'Pausado'}
+            </button>
+          )}
           <span>
             {agente.nombre} · {agente.rol === 'lider' ? 'Líder' : 'Capitán'}
           </span>

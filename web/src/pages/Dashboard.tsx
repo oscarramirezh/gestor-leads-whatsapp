@@ -108,8 +108,8 @@ export function Dashboard({ agente }: { agente: Agente }) {
 
   async function toggleDisponible() {
     const nuevo = !disponible;
-    setDisponible(nuevo);
-    await supabase.from('agentes').update({ disponible: nuevo }).eq('id', agente.id);
+    const { error } = await supabase.from('agentes').update({ disponible: nuevo }).eq('id', agente.id);
+    if (!error) setDisponible(nuevo);
   }
 
   function onLeadActualizado(lead: Lead) {
