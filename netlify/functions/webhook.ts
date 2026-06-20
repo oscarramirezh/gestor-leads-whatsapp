@@ -201,10 +201,15 @@ async function procesarMensaje(mensaje: any, contacto: any) {
   if (!esNuevo) return;
 
   // 4. Primer mensaje: solo bienvenida, sin preguntas de perfilamiento.
-  await enviarRespuestaBot(lead.id, telefono, {
-    tipo: 'texto',
-    texto: '¡Hola! 👋 Gracias por contactarnos. En un momento uno de nuestros asesores te atenderá. 😊',
-  });
+  const horaActual = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City', hour: 'numeric', hour12: false });
+  const hora = parseInt(horaActual, 10);
+  const dentroDeHorario = hora >= 8 && hora < 21;
+
+  const mensajeBienvenida = dentroDeHorario
+    ? '¡Hola! 👋 Gracias por contactarnos. En un momento uno de nuestros asesores te atenderá. 😊'
+    : '¡Hola! 👋 Gracias por contactarnos.\n\nNuestro horario de atención es de 8:00 a.m. a 9:00 p.m. En cuanto abramos, uno de nuestros asesores te atenderá. 😊';
+
+  await enviarRespuestaBot(lead.id, telefono, { tipo: 'texto', texto: mensajeBienvenida });
 
   // Si por alguna razón no se asignó al entrar (no había agentes disponibles), intentar ahora.
   if (!asignadoEsteRequest && !lead.vendedor_asignado_id) {
