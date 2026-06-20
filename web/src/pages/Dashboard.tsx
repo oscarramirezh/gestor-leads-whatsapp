@@ -3,9 +3,10 @@ import { supabase } from '../lib/supabaseClient';
 import type { Agente, Lead } from '../lib/types';
 import { LeadList } from '../components/LeadList';
 import { LeadChat } from '../components/LeadChat';
+import { KanbanView } from '../components/KanbanView';
 import { Logo } from '../components/Logo';
 
-const ESTADOS_BANDEJA = ['perfilando', 'asignado', 'en_gestion', 'ganado', 'perdido'] as const;
+const ESTADOS_BANDEJA = ['perfilando', 'asignado', 'en_gestion', 'propuesta_enviada', 'documentacion', 'ganado', 'perdido'] as const;
 
 export function Dashboard({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -13,6 +14,7 @@ export function Dashboard({ agente }: { agente: Agente }) {
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
   const [disponible, setDisponible] = useState(agente.disponible);
   const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
+  const [vistaPanel, setVistaPanel] = useState<'lista' | 'kanban'>('lista');
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const seleccionadoRef = React.useRef<Lead | null>(null);
 
@@ -134,30 +136,49 @@ export function Dashboard({ agente }: { agente: Agente }) {
             <span className="punto-disponible" />
             {disponible ? 'Disponible' : 'Pausado'}
           </button>
+          <div className="vista-tabs oculto-movil">
+            <button className={`vista-tab${vistaPanel === 'lista' ? ' activo' : ''}`} onClick={() => setVistaPanel('lista')}>☰ Lista</button>
+            <button className={`vista-tab${vistaPanel === 'kanban' ? ' activo' : ''}`} onClick={() => setVistaPanel('kanban')}>⊞ Kanban</button>
+          </div>
           <span className="header-nombre">{agente.nombre}</span>
           <button onClick={() => supabase.auth.signOut()}>Salir</button>
         </div>
       </header>
       <div className="dashboard-cuerpo">
-        <aside
-          className={`dashboard-bandeja${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}
-          style={{ width: sidebarWidth, minWidth: sidebarWidth }}
-        >
-          <LeadList leads={leads} seleccionadoId={seleccionado?.id ?? null} onSeleccionar={onSeleccionar} noLeidos={noLeidos} />
-        </aside>
-        <div className="resizer oculto-movil" onMouseDown={onResizerMouseDown} />
-        <main className={`dashboard-chat${vistaMovil === 'lista' ? ' oculto-movil' : ''}`}>
-          {seleccionado ? (
-            <LeadChat
-              lead={seleccionado}
+        {vistaPanel === 'kanban' ? (
+          <div className="kanban-fullpane">
+            <KanbanView
+              leads={leads}
+              vendedores={[agente]}
               agente={agente}
+              seleccionadoId={seleccionado?.id ?? null}
+              onSeleccionar={(lead) => { onSeleccionar(lead); setVistaPanel('lista'); setVistaMovil('chat'); }}
               onLeadActualizado={onLeadActualizado}
-              onVolver={() => setVistaMovil('lista')}
             />
-          ) : (
-            <p className="dashboard-chat-vacio">Selecciona un lead de la lista.</p>
-          )}
-        </main>
+          </div>
+        ) : (
+          <>
+            <aside
+              className={`dashboard-bandeja${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}
+              style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+            >
+              <LeadList leads={leads} seleccionadoId={seleccionado?.id ?? null} onSeleccionar={onSeleccionar} noLeidos={noLeidos} />
+            </aside>
+            <div className="resizer oculto-movil" onMouseDown={onResizerMouseDown} />
+            <main className={`dashboard-chat${vistaMovil === 'lista' ? ' oculto-movil' : ''}`}>
+              {seleccionado ? (
+                <LeadChat
+                  lead={seleccionado}
+                  agente={agente}
+                  onLeadActualizado={onLeadActualizado}
+                  onVolver={() => setVistaMovil('lista')}
+                />
+              ) : (
+                <p className="dashboard-chat-vacio">Selecciona un lead de la lista.</p>
+              )}
+            </main>
+          </>
+        )}
       </div>
     </div>
   );

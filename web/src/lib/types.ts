@@ -1,7 +1,8 @@
 // Tipos espejo de supabase/schema.sql, solo con los campos que usa el dashboard.
 
 export type ProductoTipo = 'portabilidad' | 'alta_nueva' | 'indefinido';
-export type LeadEstado = 'nuevo' | 'perfilando' | 'asignado' | 'en_gestion' | 'ganado' | 'perdido';
+export type LeadEstado = 'nuevo' | 'perfilando' | 'asignado' | 'en_gestion' | 'propuesta_enviada' | 'documentacion' | 'ganado' | 'perdido';
+export type Temperatura = 'caliente' | 'tibio' | 'frio' | null;
 export type AgenteRol = 'vendedor' | 'capitan' | 'lider';
 export type MensajeDireccion = 'entrante' | 'saliente';
 export type MensajeAutor = 'cliente' | 'bot' | 'agente';
@@ -32,6 +33,7 @@ export interface Lead {
   cerrado_en: string | null;
   motivo_perdida: string | null;
   notas: string | null;
+  temperatura: Temperatura;
 }
 
 export interface Mensaje {

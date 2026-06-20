@@ -4,6 +4,7 @@ import type { Agente, Lead } from '../lib/types';
 import { Metricas } from '../components/Metricas';
 import { LeadTable } from '../components/LeadTable';
 import { LeadChat } from '../components/LeadChat';
+import { KanbanView } from '../components/KanbanView';
 import { exportarLeadsCSV } from '../lib/csv';
 import { Logo } from '../components/Logo';
 
@@ -13,6 +14,7 @@ export function Supervisor({ agente }: { agente: Agente }) {
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
   const [metricasAbiertas, setMetricasAbiertas] = useState(false);
   const [disponible, setDisponible] = useState(agente.disponible);
+  const [vistaPanel, setVistaPanel] = useState<'lista' | 'kanban'>('lista');
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
   const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
   const [sidebarWidth, setSidebarWidth] = useState(420);
@@ -161,6 +163,10 @@ export function Supervisor({ agente }: { agente: Agente }) {
           <span>
             {agente.nombre} · {agente.rol === 'lider' ? 'Líder' : 'Capitán'}
           </span>
+          <div className="vista-tabs oculto-movil">
+            <button className={`vista-tab${vistaPanel === 'lista' ? ' activo' : ''}`} onClick={() => setVistaPanel('lista')}>☰ Lista</button>
+            <button className={`vista-tab${vistaPanel === 'kanban' ? ' activo' : ''}`} onClick={() => setVistaPanel('kanban')}>⊞ Kanban</button>
+          </div>
           <button onClick={() => exportarLeadsCSV(leads, vendedores)}>Exportar CSV</button>
           <button onClick={() => supabase.auth.signOut()}>Salir</button>
         </div>
@@ -177,43 +183,56 @@ export function Supervisor({ agente }: { agente: Agente }) {
             {metricasAbiertas && <Metricas leads={leads} vendedores={vendedores} />}
           </div>
         )}
-        <div className="dashboard-cuerpo">
-          <aside
-            className={`dashboard-bandeja dashboard-bandeja-ancha${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}
-            style={{ width: sidebarWidth, minWidth: sidebarWidth }}
-          >
-            <LeadTable
+        {vistaPanel === 'kanban' ? (
+          <div className="kanban-fullpane">
+            <KanbanView
               leads={leads}
               vendedores={vendedores}
+              agente={agente}
               seleccionadoId={seleccionado?.id ?? null}
-              onSeleccionar={(lead) => {
-                setSeleccionado(lead);
-                setVistaMovil('chat');
-                setNoLeidos((prev) => {
-                  if (!prev[lead.id]) return prev;
-                  const siguiente = { ...prev };
-                  delete siguiente[lead.id];
-                  return siguiente;
-                });
-              }}
-              onReasignar={onReasignar}
-              noLeidos={noLeidos}
+              onSeleccionar={(lead) => { setSeleccionado(lead); setVistaPanel('lista'); setVistaMovil('chat'); }}
+              onLeadActualizado={onLeadActualizado}
             />
-          </aside>
-          <div className="resizer oculto-movil" onMouseDown={onResizerMouseDown} />
-          <main className={`dashboard-chat${vistaMovil === 'lista' ? ' oculto-movil' : ''}`}>
-            {seleccionado ? (
-              <LeadChat
-                lead={seleccionado}
-                agente={agente}
-                onLeadActualizado={onLeadActualizado}
-                onVolver={() => setVistaMovil('lista')}
+          </div>
+        ) : (
+          <div className="dashboard-cuerpo">
+            <aside
+              className={`dashboard-bandeja dashboard-bandeja-ancha${vistaMovil === 'chat' ? ' oculto-movil' : ''}`}
+              style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+            >
+              <LeadTable
+                leads={leads}
+                vendedores={vendedores}
+                seleccionadoId={seleccionado?.id ?? null}
+                onSeleccionar={(lead) => {
+                  setSeleccionado(lead);
+                  setVistaMovil('chat');
+                  setNoLeidos((prev) => {
+                    if (!prev[lead.id]) return prev;
+                    const siguiente = { ...prev };
+                    delete siguiente[lead.id];
+                    return siguiente;
+                  });
+                }}
+                onReasignar={onReasignar}
+                noLeidos={noLeidos}
               />
-            ) : (
-              <p className="dashboard-chat-vacio">Selecciona un lead de la lista.</p>
-            )}
-          </main>
-        </div>
+            </aside>
+            <div className="resizer oculto-movil" onMouseDown={onResizerMouseDown} />
+            <main className={`dashboard-chat${vistaMovil === 'lista' ? ' oculto-movil' : ''}`}>
+              {seleccionado ? (
+                <LeadChat
+                  lead={seleccionado}
+                  agente={agente}
+                  onLeadActualizado={onLeadActualizado}
+                  onVolver={() => setVistaMovil('lista')}
+                />
+              ) : (
+                <p className="dashboard-chat-vacio">Selecciona un lead de la lista.</p>
+              )}
+            </main>
+          </div>
+        )}
       </div>
     </div>
   );

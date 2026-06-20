@@ -1,6 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import type { Agente, Lead, Mensaje } from '../lib/types';
+import type { Agente, Lead, LeadEstado, Mensaje, Temperatura } from '../lib/types';
+
+const ESTADOS_AVANCE: { valor: LeadEstado; label: string }[] = [
+  { valor: 'en_gestion',        label: 'Contactado' },
+  { valor: 'propuesta_enviada', label: 'Propuesta enviada' },
+  { valor: 'documentacion',     label: 'Documentación' },
+];
+
+const TEMPS: { valor: Temperatura; icon: string; label: string }[] = [
+  { valor: 'caliente', icon: '🔥', label: 'Caliente' },
+  { valor: 'tibio',    icon: '🌤', label: 'Tibio' },
+  { valor: 'frio',     icon: '❄️', label: 'Frío' },
+];
 
 interface Props {
   lead: Lead;
@@ -191,6 +203,23 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     if (!error && data) onLeadActualizado(data as Lead);
   }
 
+  async function cambiarEstado(nuevoEstado: LeadEstado) {
+    const cambios: Partial<Lead> = { estado: nuevoEstado };
+    if (nuevoEstado === 'en_gestion' && !lead.primer_toque_humano_en) {
+      cambios.primer_toque_humano_en = new Date().toISOString();
+    }
+    const { data, error } = await supabase
+      .from('leads').update(cambios).eq('id', lead.id).select().single();
+    if (!error && data) onLeadActualizado(data as Lead);
+  }
+
+  async function cambiarTemperatura(temp: Temperatura) {
+    const nueva = lead.temperatura === temp ? null : temp;
+    const { data, error } = await supabase
+      .from('leads').update({ temperatura: nueva }).eq('id', lead.id).select().single();
+    if (!error && data) onLeadActualizado(data as Lead);
+  }
+
   async function cerrarLead(estado: 'ganado' | 'perdido') {
     let motivo_perdida: string | null = null;
     if (estado === 'perdido') {
@@ -239,7 +268,30 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
           >
             📝
           </button>
-          {(lead.estado === 'asignado' || lead.estado === 'perfilando') && <button onClick={tomarLead}>Tomar</button>}
+          {TEMPS.map((t) => (
+            <button
+              key={t.valor}
+              className={`btn-temp${lead.temperatura === t.valor ? ' activo' : ''}`}
+              onClick={() => cambiarTemperatura(t.valor)}
+              title={t.label}
+            >
+              {t.icon}
+            </button>
+          ))}
+          {(lead.estado === 'asignado' || lead.estado === 'perfilando') && (
+            <button onClick={tomarLead}>Tomar</button>
+          )}
+          {!['ganado', 'perdido', 'asignado', 'perfilando'].includes(lead.estado) && (
+            <select
+              className="select-estado"
+              value={lead.estado}
+              onChange={(e) => cambiarEstado(e.target.value as LeadEstado)}
+            >
+              {ESTADOS_AVANCE.map((s) => (
+                <option key={s.valor} value={s.valor}>{s.label}</option>
+              ))}
+            </select>
+          )}
           {!cerrado && (
             <>
               <button className="btn-ganado" onClick={() => cerrarLead('ganado')}>✓</button>

@@ -428,6 +428,42 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .supervisor-cuerpo { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .dashboard-bandeja-ancha { width: 420px; min-width: 420px; }
 
+/* ---------- Vista tabs (Lista / Kanban) ---------- */
+.vista-tabs { display: flex; gap: 0.25rem; background: var(--color-primary-dark); border-radius: var(--radius-sm); padding: 0.2rem; }
+.vista-tab { background: none; border: none; color: rgba(255,255,255,0.55); font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: calc(var(--radius-sm) - 2px); cursor: pointer; }
+.vista-tab.activo { background: var(--color-accent); color: var(--color-primary-dark); font-weight: 700; }
+.vista-tab:hover:not(.activo) { color: #fff; background: none; }
+
+/* ---------- Kanban ---------- */
+.kanban-fullpane { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.kanban-wrap { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.kanban-toolbar { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
+.kanban-toolbar-label { font-size: 0.8rem; color: var(--color-text-muted); }
+.kanban-tab { background: none; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 0.8rem; padding: 0.25rem 0.75rem; cursor: pointer; color: var(--color-text-muted); }
+.kanban-tab.activo { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-primary-dark); font-weight: 700; }
+.kanban-board { display: flex; gap: 0.75rem; padding: 0.75rem; overflow-x: auto; overflow-y: hidden; flex: 1; align-items: flex-start; }
+.kanban-col { min-width: 220px; max-width: 240px; border-radius: var(--radius); border: 1px solid var(--color-border); display: flex; flex-direction: column; max-height: 100%; flex-shrink: 0; transition: box-shadow 0.15s; }
+.kanban-col-sobre { box-shadow: 0 0 0 2px var(--color-accent); }
+.kanban-col-header { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
+.kanban-col-titulo { font-size: 0.8rem; font-weight: 700; color: var(--color-text); }
+.kanban-col-count { font-size: 0.72rem; background: rgba(0,0,0,0.08); border-radius: 999px; padding: 0.1rem 0.45rem; color: var(--color-text-muted); }
+.kanban-col-body { overflow-y: auto; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-height: 80px; }
+.kanban-card { background: #fff; border: 1px solid var(--color-border); border-radius: 0.5rem; padding: 0.55rem 0.65rem; cursor: pointer; transition: box-shadow 0.12s, border-color 0.12s; }
+.kanban-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-color: var(--color-accent); }
+.kanban-card-activa { border-color: var(--color-accent); box-shadow: 0 0 0 2px #2ee6a840; }
+.kanban-card[draggable]:active { opacity: 0.6; }
+.kanban-card-nombre { font-size: 0.85rem; font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: 0.3rem; }
+.kanban-temp-icon { font-size: 0.8rem; }
+.kanban-card-tel { font-size: 0.72rem; color: var(--color-text-muted); margin-top: 0.15rem; }
+.kanban-card-vendedor { font-size: 0.72rem; color: var(--color-accent-dark); margin-top: 0.2rem; font-weight: 600; }
+.kanban-card-meta { font-size: 0.7rem; color: var(--color-text-muted); margin-top: 0.15rem; }
+
+/* ---------- Temperatura en chat ---------- */
+.btn-temp { background: none; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0.2rem 0.4rem; font-size: 0.9rem; cursor: pointer; opacity: 0.45; transition: opacity 0.12s, border-color 0.12s; }
+.btn-temp:hover { opacity: 0.8; background: none; border: 1px solid var(--color-border); }
+.btn-temp.activo { opacity: 1; border-color: var(--color-accent); background: #f0fdf4; }
+.select-estado { font-size: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 0.2rem 0.4rem; background: #fff; cursor: pointer; color: var(--color-text); }
+
 /* ---------- Métricas ---------- */
 .metricas-collapsible {
   background: var(--color-surface);
