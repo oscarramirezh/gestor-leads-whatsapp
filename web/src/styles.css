@@ -236,9 +236,10 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
   box-shadow: var(--shadow-sm);
   gap: 0.5rem;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
-.lead-chat-header-izq { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+.lead-chat-header-izq { display: flex; align-items: center; gap: 0.6rem; min-width: 0; flex: 1; }
 
 .lead-chat-header h2 {
   margin: 0; font-size: 0.95rem;
@@ -580,9 +581,15 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
   /* Tabla supervisor scroll horizontal */
   .lead-table-wrap { overflow-x: auto; }
 
-  /* Acciones del chat más compactas */
-  .lead-chat-acciones { gap: 0.25rem; }
-  .lead-chat-acciones button { padding: 0.35rem 0.55rem; font-size: 0.8rem; }
+  /* En móvil el header se apila: fila 1 = flecha+nombre, fila 2 = acciones */
+  .lead-chat-header { padding: 0.5rem 0.75rem; gap: 0.35rem; }
+  .lead-chat-header-izq { width: 100%; }
+  .lead-chat-acciones {
+    width: 100%; gap: 0.3rem; flex-wrap: nowrap;
+    overflow-x: auto; padding-bottom: 0.1rem;
+  }
+  .lead-chat-acciones button,
+  .lead-chat-acciones select { padding: 0.3rem 0.5rem; font-size: 0.78rem; flex-shrink: 0; }
 
   /* Input de mensaje más grande en móvil */
   .lead-chat-form input { font-size: 1rem; }
