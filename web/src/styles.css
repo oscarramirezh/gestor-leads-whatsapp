@@ -580,8 +580,10 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
   /* Tabla supervisor scroll horizontal */
   .lead-table-wrap { overflow-x: auto; }
 
-  /* Acciones del chat más compactas */
-  .lead-chat-acciones { gap: 0.25rem; }
+  /* Header del chat: que no se encimen los botones con la flecha/título */
+  .lead-chat-header { flex-wrap: wrap; }
+  .lead-chat-header-izq { width: 100%; }
+  .lead-chat-acciones { width: 100%; gap: 0.25rem; justify-content: flex-start; }
   .lead-chat-acciones button { padding: 0.35rem 0.55rem; font-size: 0.8rem; }
 
   /* Input de mensaje más grande en móvil */
