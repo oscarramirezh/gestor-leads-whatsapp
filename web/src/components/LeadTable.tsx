@@ -6,19 +6,23 @@ const ETIQUETA_ESTADO: Record<LeadEstado, string> = {
   nuevo: 'Nuevo',
   perfilando: 'Calificando',
   asignado: 'Sin tocar',
-  en_gestion: 'En gestión',
+  en_gestion: 'Contactado',
+  propuesta_enviada: 'Propuesta',
+  documentacion: 'Documentación',
   ganado: 'Ganado',
   perdido: 'Perdido',
 };
 
-type Filtro = 'sin_asignar' | 'sin_tocar' | 'en_gestion' | 'cerrados' | 'todos';
+type Filtro = 'sin_asignar' | 'sin_tocar' | 'en_gestion' | 'propuesta_enviada' | 'documentacion' | 'cerrados' | 'todos';
 
 const FILTROS: { id: Filtro; etiqueta: string }[] = [
-  { id: 'sin_asignar', etiqueta: 'Sin asignar' },
-  { id: 'sin_tocar', etiqueta: 'Sin tocar' },
-  { id: 'en_gestion', etiqueta: 'En gestión' },
-  { id: 'cerrados', etiqueta: 'Cerrados' },
-  { id: 'todos', etiqueta: 'Todos' },
+  { id: 'sin_asignar',      etiqueta: 'Sin asignar' },
+  { id: 'sin_tocar',        etiqueta: 'Sin tocar' },
+  { id: 'en_gestion',       etiqueta: 'Contactado' },
+  { id: 'propuesta_enviada', etiqueta: 'Propuesta' },
+  { id: 'documentacion',    etiqueta: 'Documentación' },
+  { id: 'cerrados',         etiqueta: 'Cerrados' },
+  { id: 'todos',            etiqueta: 'Todos' },
 ];
 
 function aplicarFiltro(leads: Lead[], filtro: Filtro): Lead[] {
@@ -28,9 +32,15 @@ function aplicarFiltro(leads: Lead[], filtro: Filtro): Lead[] {
         (l) => !l.vendedor_asignado_id && l.estado !== 'ganado' && l.estado !== 'perdido',
       );
     case 'sin_tocar':
-      return leads.filter((l) => l.estado === 'asignado' && !l.primer_toque_humano_en);
+      return leads.filter(
+        (l) => (l.estado === 'asignado' || l.estado === 'perfilando') && !l.primer_toque_humano_en,
+      );
     case 'en_gestion':
       return leads.filter((l) => l.estado === 'en_gestion');
+    case 'propuesta_enviada':
+      return leads.filter((l) => l.estado === 'propuesta_enviada');
+    case 'documentacion':
+      return leads.filter((l) => l.estado === 'documentacion');
     case 'cerrados':
       return leads.filter((l) => l.estado === 'ganado' || l.estado === 'perdido');
     case 'todos':
