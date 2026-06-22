@@ -525,6 +525,11 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 }
 .filtro.activo { background: var(--color-accent); color: var(--color-primary-dark); border-color: var(--color-accent); }
 .filtro.activo:hover { color: var(--color-primary-dark); }
+.select-vendedor-filtro {
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  padding: 0.28rem 0.6rem; font-size: 0.78rem; background: #fff;
+  color: var(--color-text); cursor: pointer;
+}
 
 .lead-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; background: var(--color-surface); }
 .lead-table th {

@@ -59,19 +59,32 @@ interface Props {
 
 export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, onReasignar, noLeidos = {} }: Props) {
   const [filtro, setFiltro] = useState<Filtro>('sin_tocar');
-  const visibles = aplicarFiltro(leads, filtro);
+  const [vendedorFiltro, setVendedorFiltro] = useState<string>('todos');
+  const leadsPorVendedor = vendedorFiltro === 'todos' ? leads : leads.filter((l) => l.vendedor_asignado_id === vendedorFiltro);
+  const visibles = aplicarFiltro(leadsPorVendedor, filtro);
   const nombreVendedor = (id: string | null) => vendedores.find((v) => v.id === id)?.nombre ?? '—';
+  const vendedoresOrdenados = [...vendedores].sort((a, b) => a.nombre.localeCompare(b.nombre));
 
   return (
     <div className="lead-table-wrap">
       <div className="lead-table-filtros">
+        <select
+          className="select-vendedor-filtro"
+          value={vendedorFiltro}
+          onChange={(e) => setVendedorFiltro(e.target.value)}
+        >
+          <option value="todos">Todos los agentes</option>
+          {vendedoresOrdenados.map((v) => (
+            <option key={v.id} value={v.id}>{v.nombre}</option>
+          ))}
+        </select>
         {FILTROS.map((f) => (
           <button
             key={f.id}
             className={f.id === filtro ? 'filtro activo' : 'filtro'}
             onClick={() => setFiltro(f.id)}
           >
-            {f.etiqueta} ({aplicarFiltro(leads, f.id).length})
+            {f.etiqueta} ({aplicarFiltro(leadsPorVendedor, f.id).length})
           </button>
         ))}
       </div>
