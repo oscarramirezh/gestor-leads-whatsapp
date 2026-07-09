@@ -315,6 +315,10 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
   font-size: 0.68rem; color: var(--color-text-muted);
   text-transform: capitalize; display: block; margin-bottom: 0.15rem;
 }
+.mensaje-hora {
+  font-size: 0.62rem; color: var(--color-text-muted);
+  display: block; text-align: right; margin-top: 0.2rem;
+}
 .mensaje-imagen {
   max-width: 220px; max-height: 280px; border-radius: 0.5rem;
   display: block; cursor: pointer; margin-top: 0.2rem;

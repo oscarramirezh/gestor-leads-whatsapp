@@ -6,7 +6,7 @@ import { LeadChat } from '../components/LeadChat';
 import { KanbanView } from '../components/KanbanView';
 import { Logo } from '../components/Logo';
 
-const ESTADOS_BANDEJA = ['perfilando', 'asignado', 'en_gestion', 'propuesta_enviada', 'documentacion', 'ganado', 'perdido'] as const;
+const ESTADOS_BANDEJA = ['perfilando', 'asignado', 'en_gestion', 'propuesta_enviada', 'documentacion'] as const;
 
 export function Dashboard({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);

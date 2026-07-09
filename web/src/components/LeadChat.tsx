@@ -337,6 +337,9 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
             ) : (
               <p>{m.cuerpo}</p>
             )}
+            <span className="mensaje-hora">
+              {new Date(m.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}
+            </span>
           </div>
         ))}
         <div ref={finRef} />
