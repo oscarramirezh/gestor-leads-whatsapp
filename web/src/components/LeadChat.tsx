@@ -327,21 +327,36 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       )}
 
       <div className="lead-chat-mensajes">
-        {mensajes.map((m) => (
-          <div key={m.id} className={`mensaje mensaje-${m.direccion}`}>
-            <span className="mensaje-autor">{m.autor === 'agente' ? agente.nombre : m.autor}</span>
-            {m.tipo === 'imagen' && m.direccion === 'entrante' && m.cuerpo ? (
-              <a href={m.cuerpo} target="_blank" rel="noreferrer">
-                <img src={m.cuerpo} alt="imagen del cliente" className="mensaje-imagen" />
-              </a>
-            ) : (
-              <p>{m.cuerpo}</p>
-            )}
-            <span className="mensaje-hora">
-              {new Date(m.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}
-            </span>
-          </div>
-        ))}
+        {mensajes.map((m, idx) => {
+          const fechaActual = new Date(m.timestamp).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: '2-digit', year: 'numeric' });
+          const fechaAnterior = idx > 0 ? new Date(mensajes[idx - 1].timestamp).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
+          const mostrarSeparador = fechaActual !== fechaAnterior;
+          const hoy = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: '2-digit', year: 'numeric' });
+          const ayer = new Date(Date.now() - 86400000).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: '2-digit', year: 'numeric' });
+          const etiquetaFecha = fechaActual === hoy ? 'Hoy' : fechaActual === ayer ? 'Ayer' : fechaActual;
+          return (
+            <React.Fragment key={m.id}>
+              {mostrarSeparador && (
+                <div className="mensaje-separador-fecha">
+                  <span>{etiquetaFecha}</span>
+                </div>
+              )}
+              <div className={`mensaje mensaje-${m.direccion}`}>
+                <span className="mensaje-autor">{m.autor === 'agente' ? agente.nombre : m.autor}</span>
+                {m.tipo === 'imagen' && m.direccion === 'entrante' && m.cuerpo ? (
+                  <a href={m.cuerpo} target="_blank" rel="noreferrer">
+                    <img src={m.cuerpo} alt="imagen del cliente" className="mensaje-imagen" />
+                  </a>
+                ) : (
+                  <p>{m.cuerpo}</p>
+                )}
+                <span className="mensaje-hora">
+                  {new Date(m.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}
+                </span>
+              </div>
+            </React.Fragment>
+          );
+        })}
         <div ref={finRef} />
       </div>
 
