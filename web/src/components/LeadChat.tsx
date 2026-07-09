@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import type { Agente, Lead, LeadEstado, Mensaje, Temperatura } from '../lib/types';
 
