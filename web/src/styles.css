@@ -307,9 +307,10 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 /* Fila que envuelve el mensaje + botón ↩ */
 .mensaje-fila {
   display: flex; align-items: flex-end; gap: 0.25rem;
+  max-width: 80%;
 }
-.mensaje-fila-entrante { flex-direction: row; }
-.mensaje-fila-saliente { flex-direction: row-reverse; }
+.mensaje-fila-entrante { flex-direction: row; align-self: flex-start; }
+.mensaje-fila-saliente { flex-direction: row-reverse; align-self: flex-end; }
 .btn-responder {
   background: none; border: none; cursor: pointer;
   font-size: 1rem; color: var(--color-text-muted);
@@ -358,7 +359,7 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 }
 
 .mensaje {
-  max-width: 75%; padding: 0.5rem 0.75rem;
+  flex: 1; min-width: 0; padding: 0.5rem 0.75rem;
   border-radius: 0.75rem;
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
@@ -390,12 +391,8 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
   display: block; cursor: pointer; margin-top: 0.2rem;
   border: 1px solid var(--color-border);
 }
-.mensaje-entrante { align-self: flex-start; border-bottom-left-radius: 0.2rem; }
-.mensaje-saliente {
-  align-self: flex-end;
-  background: #d6fcef;
-  border-bottom-right-radius: 0.2rem;
-}
+.mensaje-entrante { border-bottom-left-radius: 0.2rem; }
+.mensaje-saliente { background: #d6fcef; border-bottom-right-radius: 0.2rem; }
 
 .lead-chat-form {
   display: flex; padding: 0.65rem 0.75rem;
