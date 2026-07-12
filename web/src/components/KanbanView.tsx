@@ -24,6 +24,7 @@ const COLUMNAS_ESTADO: Columna[] = [
   { key: 'en_gestion',        label: 'Contactado',         color: '#eff6ff' },
   { key: 'propuesta_enviada', label: 'Propuesta enviada',  color: '#fefce8' },
   { key: 'documentacion',     label: 'Documentación',      color: '#fdf4ff' },
+  { key: 'entrega',           label: 'En entrega',         color: '#ecfdf5' },
   { key: 'ganado',            label: 'Ganado',             color: '#f0fdf4' },
   { key: 'perdido',           label: 'Perdido',            color: '#fff1f2' },
 ];
@@ -40,6 +41,7 @@ function columnaDeEstado(lead: Lead): string {
   if (lead.estado === 'en_gestion') return 'en_gestion';
   if (lead.estado === 'propuesta_enviada') return 'propuesta_enviada';
   if (lead.estado === 'documentacion') return 'documentacion';
+  if (lead.estado === 'entrega') return 'entrega';
   if (lead.estado === 'ganado') return 'ganado';
   if (lead.estado === 'perdido') return 'perdido';
   return 'sin_tomar';
@@ -54,6 +56,7 @@ const ESTADO_POR_COLUMNA: Record<string, LeadEstado> = {
   en_gestion:        'en_gestion',
   propuesta_enviada: 'propuesta_enviada',
   documentacion:     'documentacion',
+  entrega:           'entrega',
   ganado:            'ganado',
   perdido:           'perdido',
 };

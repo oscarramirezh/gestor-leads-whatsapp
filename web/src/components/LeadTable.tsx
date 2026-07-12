@@ -9,20 +9,22 @@ const ETIQUETA_ESTADO: Record<LeadEstado, string> = {
   en_gestion: 'Contactado',
   propuesta_enviada: 'Propuesta',
   documentacion: 'Documentación',
+  entrega: 'En entrega',
   ganado: 'Ganado',
   perdido: 'Perdido',
 };
 
-type Filtro = 'sin_asignar' | 'sin_tocar' | 'en_gestion' | 'propuesta_enviada' | 'documentacion' | 'cerrados' | 'todos';
+type Filtro = 'sin_asignar' | 'sin_tocar' | 'en_gestion' | 'propuesta_enviada' | 'documentacion' | 'entrega' | 'cerrados' | 'todos';
 
 const FILTROS: { id: Filtro; etiqueta: string }[] = [
-  { id: 'sin_asignar',      etiqueta: 'Sin asignar' },
-  { id: 'sin_tocar',        etiqueta: 'Sin tocar' },
-  { id: 'en_gestion',       etiqueta: 'Contactado' },
+  { id: 'sin_asignar',       etiqueta: 'Sin asignar' },
+  { id: 'sin_tocar',         etiqueta: 'Sin tocar' },
+  { id: 'en_gestion',        etiqueta: 'Contactado' },
   { id: 'propuesta_enviada', etiqueta: 'Propuesta' },
-  { id: 'documentacion',    etiqueta: 'Documentación' },
-  { id: 'cerrados',         etiqueta: 'Cerrados' },
-  { id: 'todos',            etiqueta: 'Todos' },
+  { id: 'documentacion',     etiqueta: 'Documentación' },
+  { id: 'entrega',           etiqueta: 'En entrega' },
+  { id: 'cerrados',          etiqueta: 'Cerrados' },
+  { id: 'todos',             etiqueta: 'Todos' },
 ];
 
 function aplicarFiltro(leads: Lead[], filtro: Filtro): Lead[] {
@@ -41,6 +43,8 @@ function aplicarFiltro(leads: Lead[], filtro: Filtro): Lead[] {
       return leads.filter((l) => l.estado === 'propuesta_enviada');
     case 'documentacion':
       return leads.filter((l) => l.estado === 'documentacion');
+    case 'entrega':
+      return leads.filter((l) => l.estado === 'entrega');
     case 'cerrados':
       return leads.filter((l) => l.estado === 'ganado' || l.estado === 'perdido');
     case 'todos':

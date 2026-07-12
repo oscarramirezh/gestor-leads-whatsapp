@@ -14,6 +14,7 @@ const ETIQUETA_ESTADO: Record<Lead['estado'], string> = {
   en_gestion: 'Contactado',
   propuesta_enviada: 'Propuesta',
   documentacion: 'Documentación',
+  entrega: 'En entrega',
   ganado: 'Ganado',
   perdido: 'Perdido',
 };

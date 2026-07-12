@@ -6,6 +6,7 @@ const ESTADOS_AVANCE: { valor: LeadEstado; label: string }[] = [
   { valor: 'en_gestion',        label: 'Contactado' },
   { valor: 'propuesta_enviada', label: 'Propuesta enviada' },
   { valor: 'documentacion',     label: 'Documentación' },
+  { valor: 'entrega',           label: 'En entrega' },
 ];
 
 const TEMPS: { valor: Temperatura; icon: string; label: string }[] = [
@@ -238,6 +239,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   }
 
   const cerrado = lead.estado === 'ganado' || lead.estado === 'perdido';
+  const enEntrega = lead.estado === 'entrega';
   const sinTocarMas24h =
     !lead.primer_toque_humano_en &&
     Date.now() - new Date(lead.creado_en).getTime() > 24 * 60 * 60 * 1000;
@@ -292,10 +294,16 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               ))}
             </select>
           )}
-          {!cerrado && (
+          {!cerrado && !enEntrega && (
             <>
               <button className="btn-ganado" onClick={() => cerrarLead('ganado')}>✓</button>
               <button className="btn-perdido" onClick={() => cerrarLead('perdido')}>✗</button>
+            </>
+          )}
+          {enEntrega && (
+            <>
+              <button className="btn-ganado" onClick={() => cerrarLead('ganado')} title="Confirmar ganado">✓ Confirmar</button>
+              <button className="btn-perdido" onClick={() => cerrarLead('perdido')} title="Marcar perdido">✗</button>
             </>
           )}
           {sinTocarMas24h && !cerrado && (
