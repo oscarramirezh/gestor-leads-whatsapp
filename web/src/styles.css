@@ -363,6 +363,7 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
   border-radius: 0.75rem;
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column;
 }
 .mensaje p { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 0.9rem; }
 .mensaje-autor {
