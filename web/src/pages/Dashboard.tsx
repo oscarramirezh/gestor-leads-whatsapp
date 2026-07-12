@@ -56,7 +56,7 @@ export function Dashboard({ agente }: { agente: Agente }) {
         if (!activo) return;
         const lista = (data as Lead[]) ?? [];
         setLeads(lista);
-        const idGuardado = sessionStorage.getItem('leadSeleccionadoId');
+        const idGuardado = localStorage.getItem('leadSeleccionadoId');
         if (idGuardado) {
           const leadGuardado = lista.find((l) => l.id === idGuardado);
           if (leadGuardado) {
@@ -110,8 +110,8 @@ export function Dashboard({ agente }: { agente: Agente }) {
   function onSeleccionar(lead: Lead) {
     setSeleccionado(lead);
     setVistaMovil('chat');
-    sessionStorage.setItem('leadSeleccionadoId', lead.id);
-    sessionStorage.setItem('vistaMovil', 'chat');
+    localStorage.setItem('leadSeleccionadoId', lead.id);
+    localStorage.setItem('vistaMovil', 'chat');
     setNoLeidos((prev) => {
       if (!prev[lead.id]) return prev;
       const siguiente = { ...prev };
@@ -183,7 +183,7 @@ export function Dashboard({ agente }: { agente: Agente }) {
                   lead={seleccionado}
                   agente={agente}
                   onLeadActualizado={onLeadActualizado}
-                  onVolver={() => { setVistaMovil('lista'); sessionStorage.removeItem('leadSeleccionadoId'); sessionStorage.removeItem('vistaMovil'); }}
+                  onVolver={() => { setVistaMovil('lista'); localStorage.removeItem('leadSeleccionadoId'); localStorage.removeItem('vistaMovil'); }}
                 />
               ) : (
                 <p className="dashboard-chat-vacio">Selecciona un lead de la lista.</p>
