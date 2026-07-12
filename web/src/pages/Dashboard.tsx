@@ -44,24 +44,6 @@ export function Dashboard({ agente }: { agente: Agente }) {
   }, [seleccionado]);
 
   useEffect(() => {
-    function onVisible() {
-      if (document.visibilityState !== 'visible') return;
-      const idGuardado = localStorage.getItem('leadSeleccionadoId');
-      if (!idGuardado) return;
-      setLeads((actuales) => {
-        const lead = actuales.find((l) => l.id === idGuardado);
-        if (lead) {
-          setSeleccionado(lead);
-          setVistaMovil('chat');
-        }
-        return actuales;
-      });
-    }
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, []);
-
-  useEffect(() => {
     let activo = true;
 
     supabase
