@@ -24,7 +24,8 @@ interface Props {
 
 export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
-  const [texto, setTexto] = useState('');
+  const borrador_key = `borrador_${lead.id}`;
+  const [texto, setTexto] = useState(() => localStorage.getItem(borrador_key) ?? '');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notas, setNotas] = useState(lead.notas ?? '');
@@ -187,6 +188,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       return;
     }
     setTexto('');
+    localStorage.removeItem(borrador_key);
   }
 
   async function tomarLead() {
@@ -425,7 +427,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
             <input
               type="text"
               value={texto}
-              onChange={(e) => setTexto(e.target.value)}
+              onChange={(e) => { setTexto(e.target.value); localStorage.setItem(borrador_key, e.target.value); }}
               placeholder="Escribe un mensaje…"
               disabled={enviando}
             />
