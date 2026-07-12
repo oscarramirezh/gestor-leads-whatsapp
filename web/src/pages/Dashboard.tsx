@@ -13,9 +13,7 @@ export function Dashboard({ agente }: { agente: Agente }) {
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
   const [disponible, setDisponible] = useState(agente.disponible);
-  const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>(
-    () => (sessionStorage.getItem('vistaMovil') as 'lista' | 'chat') ?? 'lista'
-  );
+  const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
   const [vistaPanel, setVistaPanel] = useState<'lista' | 'kanban'>('lista');
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const seleccionadoRef = React.useRef<Lead | null>(null);
@@ -61,7 +59,10 @@ export function Dashboard({ agente }: { agente: Agente }) {
         const idGuardado = sessionStorage.getItem('leadSeleccionadoId');
         if (idGuardado) {
           const leadGuardado = lista.find((l) => l.id === idGuardado);
-          if (leadGuardado) setSeleccionado(leadGuardado);
+          if (leadGuardado) {
+            setSeleccionado(leadGuardado);
+            setVistaMovil('chat');
+          }
         }
       });
 
