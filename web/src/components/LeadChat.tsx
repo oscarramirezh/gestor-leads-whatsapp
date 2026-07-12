@@ -439,6 +439,15 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               </div>
             </div>
           )}
+          {respondiendo && (
+            <div className="responder-preview">
+              <div className="responder-preview-contenido">
+                <span className="responder-preview-autor">{respondiendo.autor}</span>
+                <span className="responder-preview-texto">{respondiendo.cuerpo}</span>
+              </div>
+              <button type="button" className="responder-cancelar" onClick={() => setRespondiendo(null)}>✕</button>
+            </div>
+          )}
           <form onSubmit={enviarMensaje} className="lead-chat-form">
             <input
               ref={fileRef}
@@ -456,15 +465,6 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
             >
               🖼️
             </button>
-            {respondiendo && (
-              <div className="responder-preview">
-                <div className="responder-preview-contenido">
-                  <span className="responder-preview-autor">{respondiendo.autor}</span>
-                  <span className="responder-preview-texto">{respondiendo.cuerpo}</span>
-                </div>
-                <button type="button" className="responder-cancelar" onClick={() => setRespondiendo(null)}>✕</button>
-              </div>
-            )}
             <input
               ref={inputRef}
               type="text"
