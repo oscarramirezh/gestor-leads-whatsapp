@@ -13,7 +13,9 @@ export function Dashboard({ agente }: { agente: Agente }) {
   const [seleccionado, setSeleccionado] = useState<Lead | null>(null);
   const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
   const [disponible, setDisponible] = useState(agente.disponible);
-  const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>('lista');
+  const [vistaMovil, setVistaMovil] = useState<'lista' | 'chat'>(
+    () => (sessionStorage.getItem('vistaMovil') as 'lista' | 'chat') ?? 'lista'
+  );
   const [vistaPanel, setVistaPanel] = useState<'lista' | 'kanban'>('lista');
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const seleccionadoRef = React.useRef<Lead | null>(null);
@@ -53,7 +55,14 @@ export function Dashboard({ agente }: { agente: Agente }) {
       .in('estado', ESTADOS_BANDEJA)
       .order('creado_en', { ascending: true })
       .then(({ data }) => {
-        if (activo) setLeads((data as Lead[]) ?? []);
+        if (!activo) return;
+        const lista = (data as Lead[]) ?? [];
+        setLeads(lista);
+        const idGuardado = sessionStorage.getItem('leadSeleccionadoId');
+        if (idGuardado) {
+          const leadGuardado = lista.find((l) => l.id === idGuardado);
+          if (leadGuardado) setSeleccionado(leadGuardado);
+        }
       });
 
     const canalLeads = supabase
@@ -100,6 +109,8 @@ export function Dashboard({ agente }: { agente: Agente }) {
   function onSeleccionar(lead: Lead) {
     setSeleccionado(lead);
     setVistaMovil('chat');
+    sessionStorage.setItem('leadSeleccionadoId', lead.id);
+    sessionStorage.setItem('vistaMovil', 'chat');
     setNoLeidos((prev) => {
       if (!prev[lead.id]) return prev;
       const siguiente = { ...prev };
@@ -171,7 +182,7 @@ export function Dashboard({ agente }: { agente: Agente }) {
                   lead={seleccionado}
                   agente={agente}
                   onLeadActualizado={onLeadActualizado}
-                  onVolver={() => setVistaMovil('lista')}
+                  onVolver={() => { setVistaMovil('lista'); sessionStorage.removeItem('leadSeleccionadoId'); sessionStorage.removeItem('vistaMovil'); }}
                 />
               ) : (
                 <p className="dashboard-chat-vacio">Selecciona un lead de la lista.</p>
