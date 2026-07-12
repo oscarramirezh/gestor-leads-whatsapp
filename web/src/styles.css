@@ -496,7 +496,7 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .resizer:hover::after { color: var(--color-accent-dark); }
 
 /* ---------- Supervisor ---------- */
-.supervisor-cuerpo { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.supervisor-cuerpo { display: flex; flex-direction: column; flex: 1; overflow-y: auto; overflow-x: hidden; }
 .dashboard-bandeja-ancha { width: 420px; min-width: 420px; }
 
 /* ---------- Vista tabs (Lista / Kanban) ---------- */
