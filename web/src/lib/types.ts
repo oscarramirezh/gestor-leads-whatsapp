@@ -45,4 +45,7 @@ export interface Mensaje {
   autor: MensajeAutor;
   agente_id: string | null;
   timestamp: string;
+  reply_to_id: string | null;
+  reply_to_cuerpo: string | null;
+  reply_to_autor: string | null;
 }

@@ -36,9 +36,12 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [caption, setCaption] = useState('');
   const [enviandoImg, setEnviandoImg] = useState(false);
   const [progresoImg, setProgresoImg] = useState('');
+  const [respondiendo, setRespondiendo] = useState<{ id: string; cuerpo: string; autor: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const finRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const notasTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartX = useRef<number>(0);
 
   useEffect(() => {
     setNotas(lead.notas ?? '');
@@ -165,6 +168,12 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     }
   }
 
+  function responderA(m: Mensaje) {
+    const autor = m.autor === 'agente' ? agente.nombre : (lead.nombre || lead.telefono);
+    setRespondiendo({ id: m.id, cuerpo: m.cuerpo ?? '📷 Imagen', autor });
+    inputRef.current?.focus();
+  }
+
   async function enviarMensaje(e: React.FormEvent) {
     e.preventDefault();
     if (!texto.trim()) return;
@@ -178,7 +187,13 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${sesion.session?.access_token}`,
       },
-      body: JSON.stringify({ lead_id: lead.id, texto }),
+      body: JSON.stringify({
+        lead_id: lead.id,
+        texto,
+        reply_to_id: respondiendo?.id ?? null,
+        reply_to_cuerpo: respondiendo?.cuerpo ?? null,
+        reply_to_autor: respondiendo?.autor ?? null,
+      }),
     });
 
     setEnviando(false);
@@ -189,6 +204,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     }
     setTexto('');
     localStorage.removeItem(borrador_key);
+    setRespondiendo(null);
   }
 
   async function tomarLead() {
@@ -351,18 +367,34 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
                   <span>{etiquetaFecha}</span>
                 </div>
               )}
-              <div className={`mensaje mensaje-${m.direccion}`}>
-                <span className="mensaje-autor">{m.autor === 'agente' ? agente.nombre : m.autor}</span>
-                {m.tipo === 'imagen' && m.direccion === 'entrante' && m.cuerpo ? (
-                  <a href={m.cuerpo} target="_blank" rel="noreferrer">
-                    <img src={m.cuerpo} alt="imagen del cliente" className="mensaje-imagen" />
-                  </a>
-                ) : (
-                  <p>{m.cuerpo}</p>
-                )}
-                <span className="mensaje-hora">
-                  {new Date(m.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}
-                </span>
+              <div
+                className={`mensaje-fila mensaje-fila-${m.direccion}`}
+                onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                onTouchEnd={(e) => {
+                  const dx = e.changedTouches[0].clientX - touchStartX.current;
+                  if (dx > 50) responderA(m);
+                }}
+              >
+                <div className={`mensaje mensaje-${m.direccion}`}>
+                  {m.reply_to_cuerpo && (
+                    <div className="mensaje-cita">
+                      <span className="mensaje-cita-autor">{m.reply_to_autor}</span>
+                      <span className="mensaje-cita-texto">{m.reply_to_cuerpo}</span>
+                    </div>
+                  )}
+                  <span className="mensaje-autor">{m.autor === 'agente' ? agente.nombre : m.autor}</span>
+                  {m.tipo === 'imagen' && m.direccion === 'entrante' && m.cuerpo ? (
+                    <a href={m.cuerpo} target="_blank" rel="noreferrer">
+                      <img src={m.cuerpo} alt="imagen del cliente" className="mensaje-imagen" />
+                    </a>
+                  ) : (
+                    <p>{m.cuerpo}</p>
+                  )}
+                  <span className="mensaje-hora">
+                    {new Date(m.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}
+                  </span>
+                </div>
+                <button className="btn-responder" onClick={() => responderA(m)} title="Responder">↩</button>
               </div>
             </React.Fragment>
           );
@@ -424,7 +456,17 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
             >
               🖼️
             </button>
+            {respondiendo && (
+              <div className="responder-preview">
+                <div className="responder-preview-contenido">
+                  <span className="responder-preview-autor">{respondiendo.autor}</span>
+                  <span className="responder-preview-texto">{respondiendo.cuerpo}</span>
+                </div>
+                <button type="button" className="responder-cancelar" onClick={() => setRespondiendo(null)}>✕</button>
+              </div>
+            )}
             <input
+              ref={inputRef}
               type="text"
               value={texto}
               onChange={(e) => { setTexto(e.target.value); localStorage.setItem(borrador_key, e.target.value); }}

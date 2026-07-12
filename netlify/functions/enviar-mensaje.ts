@@ -24,14 +24,14 @@ export const handler: Handler = async (event) => {
     return { statusCode: 401, body: JSON.stringify({ error: 'Sesión inválida' }) };
   }
 
-  let body: { lead_id?: string; texto?: string };
+  let body: { lead_id?: string; texto?: string; reply_to_id?: string; reply_to_cuerpo?: string; reply_to_autor?: string };
   try {
     body = JSON.parse(event.body ?? '{}');
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: 'JSON inválido' }) };
   }
 
-  const { lead_id, texto } = body;
+  const { lead_id, texto, reply_to_id, reply_to_cuerpo, reply_to_autor } = body;
   if (!lead_id || !texto?.trim()) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Faltan lead_id y/o texto' }) };
   }
@@ -67,6 +67,9 @@ export const handler: Handler = async (event) => {
     autor: 'agente',
     agente_id: agente.id,
     wa_message_id: waMessageId,
+    reply_to_id: reply_to_id ?? null,
+    reply_to_cuerpo: reply_to_cuerpo ?? null,
+    reply_to_autor: reply_to_autor ?? null,
   });
   if (errorInsert) {
     return { statusCode: 500, body: JSON.stringify({ error: 'Mensaje enviado pero no se pudo registrar' }) };

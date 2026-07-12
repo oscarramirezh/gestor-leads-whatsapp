@@ -304,6 +304,59 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
   background: #f0f2f5;
 }
 
+/* Fila que envuelve el mensaje + botón ↩ */
+.mensaje-fila {
+  display: flex; align-items: flex-end; gap: 0.25rem;
+}
+.mensaje-fila-entrante { flex-direction: row; }
+.mensaje-fila-saliente { flex-direction: row-reverse; }
+.btn-responder {
+  background: none; border: none; cursor: pointer;
+  font-size: 1rem; color: var(--color-text-muted);
+  padding: 0.2rem 0.3rem; opacity: 0; transition: opacity 0.15s;
+  flex-shrink: 0; line-height: 1;
+}
+.mensaje-fila:hover .btn-responder,
+.mensaje-fila:focus-within .btn-responder { opacity: 1; }
+/* En móvil siempre visible pero más pequeño */
+@media (hover: none) { .btn-responder { opacity: 0.4; } }
+
+/* Cita dentro de la burbuja */
+.mensaje-cita {
+  border-left: 3px solid var(--color-accent);
+  background: rgba(0,0,0,0.05);
+  border-radius: 0.3rem; padding: 0.25rem 0.5rem;
+  margin-bottom: 0.35rem; overflow: hidden;
+}
+.mensaje-cita-autor {
+  display: block; font-size: 0.65rem; font-weight: 600;
+  color: var(--color-accent-dark); margin-bottom: 0.1rem;
+}
+.mensaje-cita-texto {
+  display: block; font-size: 0.75rem; color: var(--color-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Preview de respuesta sobre el input */
+.responder-preview {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: var(--color-bg); border-top: 2px solid var(--color-accent);
+  padding: 0.4rem 0.75rem;
+}
+.responder-preview-contenido { flex: 1; overflow: hidden; }
+.responder-preview-autor {
+  display: block; font-size: 0.68rem; font-weight: 600;
+  color: var(--color-accent-dark);
+}
+.responder-preview-texto {
+  display: block; font-size: 0.75rem; color: var(--color-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.responder-cancelar {
+  background: none; border: none; cursor: pointer;
+  font-size: 0.9rem; color: var(--color-text-muted); padding: 0.2rem;
+}
+
 .mensaje {
   max-width: 75%; padding: 0.5rem 0.75rem;
   border-radius: 0.75rem;
