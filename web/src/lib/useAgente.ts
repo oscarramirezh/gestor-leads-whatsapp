@@ -40,8 +40,10 @@ export function useAgente(): EstadoSesion {
 
     supabase.auth.getSession().then(({ data }) => cargarAgente(data.session));
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setCargando(true);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      // TOKEN_REFRESHED es solo un refresh silencioso — no mostrar pantalla de carga
+      // para evitar desmontar el Dashboard y perder el estado del chat
+      if (event !== 'TOKEN_REFRESHED') setCargando(true);
       cargarAgente(s);
     });
 
