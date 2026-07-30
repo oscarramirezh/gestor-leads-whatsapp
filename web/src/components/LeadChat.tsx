@@ -22,6 +22,11 @@ interface Props {
   onVolver?: () => void;
 }
 
+async function getToken(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? '';
+}
+
 export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const borrador_key = `borrador_${lead.id}`;
@@ -111,7 +116,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     if (!imagenes.length) return;
     setEnviandoImg(true);
     setError(null);
-    const { data: sesion } = await supabase.auth.getSession();
+    const token = await getToken();
     for (let i = 0; i < imagenes.length; i++) {
       const img = imagenes[i];
       setProgresoImg(`Enviando ${i + 1} de ${imagenes.length}…`);
@@ -120,7 +125,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${sesion.session?.access_token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           lead_id: lead.id,
@@ -152,7 +157,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     if (!confirmar) return;
     setReactivando(true);
     setError(null);
-    const { data: sesion } = await supabase.auth.getSession();
+    const token = await getToken();
     const res = await fetch('/.netlify/functions/enviar-plantilla', {
       method: 'POST',
       headers: {
@@ -180,7 +185,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     setEnviando(true);
     setError(null);
 
-    const { data: sesion } = await supabase.auth.getSession();
+    const token = await getToken();
     const res = await fetch('/.netlify/functions/enviar-mensaje', {
       method: 'POST',
       headers: {
