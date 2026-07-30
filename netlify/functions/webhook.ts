@@ -207,7 +207,7 @@ async function procesarMensaje(mensaje: any, contacto: any) {
 
   const mensajeBienvenida = dentroDeHorario
     ? '¡Hola! 👋 Gracias por contactarnos. En un momento uno de nuestros asesores te atenderá. 😊'
-    : '¡Hola! 👋 Gracias por contactarnos.\n\nNuestro horario de atención es de 8:00 a.m. a 9:00 p.m. En cuanto abramos, uno de nuestros asesores te atenderá. 😊';
+    : '¡Hola! 👋 Gracias por contactarnos.\n\nNuestro horario de atención es de 8:00 a.m. a 9:00 p.m. En cuanto estemos disponibles, uno de nuestros asesores te atenderá. 😊';
 
   await enviarRespuestaBot(lead.id, telefono, { tipo: 'texto', texto: mensajeBienvenida });
 
