@@ -141,8 +141,28 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     setMotivoElegido(null);
   }, [lead.id]);
 
+  // Las aperturas llevan el nombre de quien escribe, así que una respuesta
+  // global necesita variables. {agente} y {cliente} se sustituyen al insertar.
+  function resolverVariables(cuerpo: string): string {
+    const primerNombre = (lead.nombre ?? '').trim().split(/\s+/)[0] ?? '';
+    let salida = cuerpo.replace(/\{agente\}/gi, agente.nombre.split(/\s+/)[0]);
+
+    if (primerNombre) {
+      salida = salida.replace(/\{cliente\}/gi, primerNombre);
+    } else {
+      // Muchos leads llegan sin nombre y el hueco se nota: "Hola , ..." o
+      // "Sigo atendiéndote, . ...". Se quita junto con la puntuación sobrante,
+      // pero conservando la coma cuando ésta va después ("Hola, soy Ángel").
+      salida = salida
+        .replace(/\s*\{cliente\}(\s*,)/gi, '$1')
+        .replace(/\s*,?\s*\{cliente\}/gi, '');
+    }
+    return salida.replace(/\s{2,}/g, ' ').trim();
+  }
+
   function insertarRespuesta(r: RespuestaRapida) {
-    const nuevo = texto.trim() ? `${texto.trim()} ${r.cuerpo}` : r.cuerpo;
+    const cuerpo = resolverVariables(r.cuerpo);
+    const nuevo = texto.trim() ? `${texto.trim()} ${cuerpo}` : cuerpo;
     setTexto(nuevo);
     localStorage.setItem(borrador_key, nuevo);
     setMostrarRespuestas(false);
@@ -702,7 +722,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
                       {r.titulo}
                       {r.agente_id && <span className="respuesta-personal">personal</span>}
                     </span>
-                    <span className="respuesta-cuerpo">{r.cuerpo}</span>
+                    <span className="respuesta-cuerpo">{resolverVariables(r.cuerpo)}</span>
                   </button>
                 ))
               )}
