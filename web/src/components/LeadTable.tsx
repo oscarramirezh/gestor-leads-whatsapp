@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { Agente, Lead, LeadEstado } from '../lib/types';
 import { TiempoTranscurrido } from './TiempoTranscurrido';
 
@@ -33,16 +33,21 @@ function seguimientoVencido(lead: Lead): boolean {
 
 type Filtro = 'sin_asignar' | 'sin_tocar' | 'seguimiento' | 'en_gestion' | 'propuesta_enviada' | 'documentacion' | 'entrega' | 'cerrados' | 'todos';
 
-const FILTROS: { id: Filtro; etiqueta: string }[] = [
-  { id: 'sin_asignar',       etiqueta: 'Sin asignar' },
-  { id: 'sin_tocar',         etiqueta: 'Sin tocar' },
-  { id: 'seguimiento',       etiqueta: 'Seguimiento hoy' },
-  { id: 'en_gestion',        etiqueta: 'Contactado' },
-  { id: 'propuesta_enviada', etiqueta: 'Propuesta' },
-  { id: 'documentacion',     etiqueta: 'Documentación' },
-  { id: 'entrega',           etiqueta: 'En entrega' },
-  { id: 'cerrados',          etiqueta: 'Cerrados' },
-  { id: 'todos',             etiqueta: 'Todos' },
+// Agrupados por intención: primero lo que requiere acción hoy, luego el
+// avance normal del lead, al final el cierre. El separador visual entre
+// grupos es lo que evita que se lean como nueve botones sueltos.
+type GrupoFiltro = 'pendiente' | 'avance' | 'cierre';
+
+const FILTROS: { id: Filtro; etiqueta: string; grupo: GrupoFiltro }[] = [
+  { id: 'sin_asignar',       etiqueta: 'Sin asignar',   grupo: 'pendiente' },
+  { id: 'sin_tocar',         etiqueta: 'Sin tocar',     grupo: 'pendiente' },
+  { id: 'seguimiento',       etiqueta: 'Seguimiento',   grupo: 'pendiente' },
+  { id: 'en_gestion',        etiqueta: 'Contactado',    grupo: 'avance' },
+  { id: 'propuesta_enviada', etiqueta: 'Propuesta',     grupo: 'avance' },
+  { id: 'documentacion',     etiqueta: 'Documentación', grupo: 'avance' },
+  { id: 'entrega',           etiqueta: 'En entrega',    grupo: 'avance' },
+  { id: 'cerrados',          etiqueta: 'Cerrados',      grupo: 'cierre' },
+  { id: 'todos',             etiqueta: 'Todos',         grupo: 'cierre' },
 ];
 
 function aplicarFiltro(leads: Lead[], filtro: Filtro): Lead[] {
@@ -107,6 +112,7 @@ export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, on
 
   return (
     <div className="lead-table-wrap">
+      {/* Fila 1: "qué estoy viendo" — buscador y agente van juntos. */}
       <div className="lead-table-buscador">
         <input
           type="search"
@@ -115,14 +121,6 @@ export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, on
           onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar por teléfono o nombre…"
         />
-        {termino && (
-          <span className="buscador-resultado">
-            {visibles.length} {visibles.length === 1 ? 'resultado' : 'resultados'} · todos los estados
-          </span>
-        )}
-      </div>
-
-      <div className="lead-table-filtros">
         <select
           className="select-vendedor-filtro"
           value={vendedorFiltro}
@@ -133,16 +131,31 @@ export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, on
             <option key={v.id} value={v.id}>{v.nombre}</option>
           ))}
         </select>
-        {FILTROS.map((f) => (
-          <button
-            key={f.id}
-            className={f.id === filtro ? 'filtro activo' : 'filtro'}
-            onClick={() => { setFiltro(f.id); setBusqueda(''); }}
-          >
-            {f.etiqueta} ({aplicarFiltro(buscados, f.id).length})
-          </button>
-        ))}
       </div>
+
+      {/* Fila 2: filtros por estado, separados por grupo. */}
+      {termino ? (
+        <div className="lead-table-filtros buscando">
+          <span className="buscador-resultado">
+            {visibles.length} {visibles.length === 1 ? 'resultado' : 'resultados'} en todos los estados
+          </span>
+          <button className="filtro" onClick={() => setBusqueda('')}>✕ Limpiar</button>
+        </div>
+      ) : (
+        <div className="lead-table-filtros">
+          {FILTROS.map((f, i) => (
+            <Fragment key={f.id}>
+              {i > 0 && FILTROS[i - 1].grupo !== f.grupo && <span className="filtro-separador" />}
+              <button
+                className={f.id === filtro ? 'filtro activo' : 'filtro'}
+                onClick={() => setFiltro(f.id)}
+              >
+                {f.etiqueta} <span className="filtro-conteo">{aplicarFiltro(buscados, f.id).length}</span>
+              </button>
+            </Fragment>
+          ))}
+        </div>
+      )}
 
       <table className="lead-table">
         <thead>

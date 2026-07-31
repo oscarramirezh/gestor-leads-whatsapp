@@ -60,6 +60,8 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [mostrarRespuestas, setMostrarRespuestas] = useState(false);
   const [mostrarMotivos, setMostrarMotivos] = useState(false);
   const [motivoElegido, setMotivoElegido] = useState<string | null>(null);
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const finRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -113,6 +115,31 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       });
     return () => { activo = false; };
   }, []);
+
+  // Cerrar el menú "Más" al hacer clic fuera o con Escape.
+  useEffect(() => {
+    if (!menuAbierto) return;
+    function alClic(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuAbierto(false);
+    }
+    function alEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuAbierto(false);
+    }
+    document.addEventListener('mousedown', alClic);
+    document.addEventListener('keydown', alEscape);
+    return () => {
+      document.removeEventListener('mousedown', alClic);
+      document.removeEventListener('keydown', alEscape);
+    };
+  }, [menuAbierto]);
+
+  // El menú se cierra solo al cambiar de lead, si no queda abierto encima del siguiente chat.
+  useEffect(() => {
+    setMenuAbierto(false);
+    setMostrarRespuestas(false);
+    setMostrarMotivos(false);
+    setMotivoElegido(null);
+  }, [lead.id]);
 
   function insertarRespuesta(r: RespuestaRapida) {
     const nuevo = texto.trim() ? `${texto.trim()} ${r.cuerpo}` : r.cuerpo;
@@ -372,50 +399,23 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
           </div>
         </div>
         <div className="lead-chat-acciones">
-          <button
-            className={`btn-notas${mostrarNotas ? ' activo' : ''}`}
-            onClick={() => setMostrarNotas((v) => !v)}
-            title="Notas internas"
-          >
-            📝
-          </button>
-          {TEMPS.map((t) => (
-            <button
-              key={t.valor}
-              className={`btn-temp${lead.temperatura === t.valor ? ' activo' : ''}`}
-              onClick={() => cambiarTemperatura(t.valor)}
-              title={t.label}
-            >
-              {t.icon}
-            </button>
-          ))}
-          {PRODUCTOS.map((p) => (
-            <button
-              key={p.valor}
-              className={`btn-producto${lead.producto_interes === p.valor ? ' activo' : ''}`}
-              onClick={() => cambiarProducto(p.valor)}
-              title={p.label}
-            >
-              {p.corto}
-            </button>
-          ))}
-          <select
-            className="select-seguimiento"
-            value=""
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v) fijarSeguimiento(v === 'quitar' ? null : Number(v));
-            }}
-            title="Recordatorio de seguimiento"
-          >
-            <option value="">⏰</option>
-            {SEGUIMIENTOS.map((s) => (
-              <option key={s.horas} value={s.horas}>{s.label}</option>
+          {/* Temperatura: un clic, varias veces al día. Se queda a la vista. */}
+          <div className="grupo-temp">
+            {TEMPS.map((t) => (
+              <button
+                key={t.valor}
+                className={`btn-temp${lead.temperatura === t.valor ? ' activo' : ''}`}
+                onClick={() => cambiarTemperatura(t.valor)}
+                title={t.label}
+              >
+                {t.icon}
+              </button>
             ))}
-            {lead.seguimiento_en && <option value="quitar">Quitar recordatorio</option>}
-          </select>
+          </div>
+
+          {/* Avance del lead: lo que el vendedor toca en cada conversación. */}
           {(lead.estado === 'asignado' || lead.estado === 'perfilando') && (
-            <button onClick={tomarLead}>Tomar</button>
+            <button className="btn-tomar" onClick={tomarLead}>Tomar</button>
           )}
           {!['ganado', 'perdido', 'asignado', 'perfilando'].includes(lead.estado) && (
             <select
@@ -428,65 +428,118 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               ))}
             </select>
           )}
-          {!cerrado && !enEntrega && (
-            <>
-              <button className="btn-ganado" onClick={() => cerrarLead('ganado')}>✓</button>
-              <button className="btn-perdido" onClick={() => cerrarLead('perdido')}>✗</button>
-            </>
-          )}
-          {enEntrega && (
-            <>
-              <button className="btn-ganado" onClick={() => cerrarLead('ganado')} title="Confirmar ganado">✓ Confirmar</button>
+          {!cerrado && (
+            <div className="grupo-cierre">
+              <button
+                className="btn-ganado"
+                onClick={() => cerrarLead('ganado')}
+                title={enEntrega ? 'Confirmar ganado' : 'Marcar ganado'}
+              >
+                {enEntrega ? '✓ Confirmar' : '✓'}
+              </button>
               <button className="btn-perdido" onClick={() => cerrarLead('perdido')} title="Marcar perdido">✗</button>
-            </>
+            </div>
           )}
-          {sinTocarMas24h && !cerrado && (
+
+          {/* Todo lo ocasional vive aquí, con etiquetas de texto en vez de iconos sueltos. */}
+          <div className="menu-mas" ref={menuRef}>
             <button
-              className="btn-reactivar"
-              onClick={reactivarLead}
-              disabled={reactivando}
-              title="Enviar plantilla de reactivación (tiene costo ~$0.05 USD)"
+              className={`btn-mas${menuAbierto ? ' activo' : ''}`}
+              onClick={() => setMenuAbierto((v) => !v)}
+              title="Más acciones"
+              aria-haspopup="menu"
+              aria-expanded={menuAbierto}
             >
-              {reactivando ? '…' : '↩️ Reactivar'}
+              ⋯
             </button>
-          )}
-          <button
-            className={`btn-no-contactar${lead.no_contactar ? ' activo' : ''}`}
-            onClick={alternarNoContactar}
-            title={lead.no_contactar ? 'Marcado como NO contactar — clic para reactivar' : 'Marcar como no contactar'}
-          >
-            🚫
-          </button>
+            {menuAbierto && (
+              <div className="menu-panel" role="menu">
+                <button
+                  className="menu-item"
+                  onClick={() => { setMostrarNotas((v) => !v); setMenuAbierto(false); }}
+                >
+                  📝 Notas internas
+                  {lead.notas?.trim() && <span className="menu-punto" />}
+                </button>
+
+                <div className="menu-seccion">Producto</div>
+                {PRODUCTOS.map((p) => (
+                  <button
+                    key={p.valor}
+                    className={`menu-item${lead.producto_interes === p.valor ? ' activo' : ''}`}
+                    onClick={() => { cambiarProducto(p.valor); setMenuAbierto(false); }}
+                  >
+                    {lead.producto_interes === p.valor ? '● ' : '○ '}{p.label}
+                  </button>
+                ))}
+
+                <div className="menu-seccion">Recordarme</div>
+                {SEGUIMIENTOS.map((s) => (
+                  <button
+                    key={s.horas}
+                    className="menu-item"
+                    onClick={() => { fijarSeguimiento(s.horas); setMenuAbierto(false); }}
+                  >
+                    ⏰ {s.label}
+                  </button>
+                ))}
+                {lead.seguimiento_en && (
+                  <button
+                    className="menu-item"
+                    onClick={() => { fijarSeguimiento(null); setMenuAbierto(false); }}
+                  >
+                    ✕ Quitar recordatorio
+                  </button>
+                )}
+
+                <div className="menu-separador" />
+                {sinTocarMas24h && !cerrado && (
+                  <button
+                    className="menu-item"
+                    onClick={() => { reactivarLead(); setMenuAbierto(false); }}
+                    disabled={reactivando}
+                  >
+                    ↩️ Reactivar <span className="menu-costo">~$0.05</span>
+                  </button>
+                )}
+                <button
+                  className={`menu-item${lead.no_contactar ? ' peligro' : ''}`}
+                  onClick={() => { alternarNoContactar(); setMenuAbierto(false); }}
+                >
+                  🚫 {lead.no_contactar ? 'Permitir contacto' : 'No contactar'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
-      {lead.no_contactar && (
-        <div className="aviso aviso-bloqueo">
-          🚫 Este cliente pidió no ser contactado. El envío está bloqueado.
-        </div>
-      )}
-
-      {!lead.no_contactar && ventanaCerrada && (
-        <div className="aviso aviso-bloqueo">
-          ⏳ La ventana de 24 h se cerró. Un mensaje normal no le llegará; usa la
-          plantilla de reactivación (tiene costo).
-        </div>
-      )}
-
-      {!lead.no_contactar && ventanaPorCerrar && (
-        <div className="aviso aviso-alerta">
-          ⏳ La ventana de 24 h cierra en ~{horasRestantes} h. Escríbele ahora y te sale
-          gratis; después solo con plantilla de pago.
-        </div>
-      )}
-
-      {lead.seguimiento_en && (
-        <div className="aviso aviso-info">
-          ⏰ Seguimiento: {new Date(lead.seguimiento_en).toLocaleString('es-MX', {
-            timeZone: 'America/Mexico_City', day: '2-digit', month: '2-digit',
-            hour: '2-digit', minute: '2-digit',
-          })}
-          {lead.seguimiento_nota && ` — ${lead.seguimiento_nota}`}
+      {/* Los avisos van en una sola franja para que no empujen el chat hacia abajo. */}
+      {(lead.no_contactar || ventanaCerrada || ventanaPorCerrar || lead.seguimiento_en) && (
+        <div className="avisos-fila">
+          {lead.no_contactar && (
+            <span className="aviso aviso-bloqueo" title="El envío está bloqueado">
+              🚫 No contactar
+            </span>
+          )}
+          {!lead.no_contactar && ventanaCerrada && (
+            <span className="aviso aviso-bloqueo" title="Un mensaje normal no le llegará; usa la plantilla de reactivación">
+              ⏳ Ventana de 24 h cerrada
+            </span>
+          )}
+          {!lead.no_contactar && ventanaPorCerrar && (
+            <span className="aviso aviso-alerta" title="Después solo podrás escribirle con plantilla de pago">
+              ⏳ Cierra en ~{horasRestantes} h
+            </span>
+          )}
+          {lead.seguimiento_en && (
+            <span className="aviso aviso-info" title={lead.seguimiento_nota ?? 'Recordatorio de seguimiento'}>
+              ⏰ {new Date(lead.seguimiento_en).toLocaleString('es-MX', {
+                timeZone: 'America/Mexico_City', day: '2-digit', month: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+              })}
+            </span>
+          )}
         </div>
       )}
 
