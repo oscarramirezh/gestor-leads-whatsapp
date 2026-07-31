@@ -197,8 +197,34 @@ async function procesarMensaje(mensaje: any, contacto: any) {
     throw errorMensaje;
   }
 
+  // 2b. Marcar la ventana de servicio de 24h. Mientras el cliente escriba,
+  //     podemos responderle gratis; pasadas 24h solo con plantillas de pago.
+  const entranteEn = mensaje.timestamp
+    ? new Date(Number(mensaje.timestamp) * 1000).toISOString()
+    : new Date().toISOString();
+
+  const cambiosLead: Record<string, unknown> = { ultimo_mensaje_entrante_en: entranteEn };
+
+  // 2c. Opt-out: si el cliente pide que no le escriban, lo marcamos para
+  //     bloquear envíos. Ignorarlo genera reportes y baja el quality rating
+  //     del número en Meta, que a su vez recorta los límites de envío.
+  if (texto && esPeticionDeBaja(texto)) {
+    cambiosLead.no_contactar = true;
+    await supabase.from('eventos').insert({
+      lead_id: lead.id,
+      tipo_evento: 'opt_out',
+      payload: { mensaje: texto },
+    });
+    console.log(`Lead ${lead.id} pidió no ser contactado`);
+  }
+
+  await supabase.from('leads').update(cambiosLead).eq('id', lead.id);
+
   // 3. Si el lead ya está con un vendedor, no responder automáticamente.
   if (!esNuevo) return;
+
+  // Si su primer mensaje ya fue una baja, no le mandamos bienvenida.
+  if (cambiosLead.no_contactar) return;
 
   // 4. Primer mensaje: solo bienvenida, sin preguntas de perfilamiento.
   const horaActual = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City', hour: 'numeric', hour12: false });
@@ -217,6 +243,43 @@ async function procesarMensaje(mensaje: any, contacto: any) {
     if (error) console.error('Error en asignar_lead (fallback):', error);
     else console.log(agenteId ? `Lead ${lead.id} asignado (fallback) a ${agenteId}` : `Lead ${lead.id} sin asignar`);
   }
+}
+
+/**
+ * Detecta si el cliente está pidiendo que no le escriban más.
+ * Exigimos que el mensaje sea corto y sea básicamente la petición, para no
+ * marcar por error frases como "no quiero darme de baja de mi plan actual".
+ */
+function esPeticionDeBaja(texto: string): boolean {
+  const limpio = texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // quita acentos
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (limpio.length > 60) return false;
+
+  // "no" a secas se omite a propósito: es ambiguo y marcaría de más.
+  const exactas = ['baja', 'stop', 'unsubscribe'];
+  if (exactas.includes(limpio)) return true;
+
+  const frases = [
+    'no me contacten',
+    'no me contacte',
+    'no me escriban',
+    'no me escriba',
+    'no me manden mensajes',
+    'no me vuelvan a escribir',
+    'dejen de escribirme',
+    'dar de baja',
+    'darme de baja',
+    'quitenme de la lista',
+    'no estoy interesado',
+    'ya no me interesa',
+  ];
+  return frases.some((f) => limpio.includes(f));
 }
 
 /** Descarga una imagen de WhatsApp y la sube a Supabase Storage. Devuelve la URL pública. */

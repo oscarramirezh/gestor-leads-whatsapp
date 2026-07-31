@@ -54,6 +54,12 @@ export const handler: Handler = async (event) => {
     return { statusCode: 403, body: JSON.stringify({ error: 'Este lead no está asignado a tu cuenta' }) };
   }
 
+  // El bloqueo real va aquí, no solo en la UI: escribirle a quien pidió no ser
+  // contactado genera reportes y baja el quality rating del número en Meta.
+  if (lead.no_contactar) {
+    return { statusCode: 403, body: JSON.stringify({ error: 'Este cliente pidió no ser contactado' }) };
+  }
+
   const waMessageId = await enviarTexto(lead.telefono, texto.trim());
   if (!waMessageId) {
     return { statusCode: 502, body: JSON.stringify({ error: 'La Cloud API no aceptó el mensaje' }) };

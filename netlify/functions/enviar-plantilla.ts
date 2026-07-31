@@ -43,6 +43,10 @@ export const handler: Handler = async (event) => {
     return { statusCode: 403, body: JSON.stringify({ error: 'Este lead no está asignado a tu cuenta' }) };
   }
 
+  if (lead.no_contactar) {
+    return { statusCode: 403, body: JSON.stringify({ error: 'Este cliente pidió no ser contactado' }) };
+  }
+
   const waMessageId = await enviarPlantillaReenganche(lead.telefono, lead.nombre ?? '');
 
   if (!waMessageId) {

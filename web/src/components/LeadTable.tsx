@@ -14,11 +14,29 @@ const ETIQUETA_ESTADO: Record<LeadEstado, string> = {
   perdido: 'Perdido',
 };
 
-type Filtro = 'sin_asignar' | 'sin_tocar' | 'en_gestion' | 'propuesta_enviada' | 'documentacion' | 'entrega' | 'cerrados' | 'todos';
+// Semáforo de SLA: la meta es primer toque humano en menos de 2 min.
+// Devuelve la clase de la fila para que el capitán detecte el atraso de un vistazo.
+export function claseSLA(lead: Lead): string {
+  const sinTocar = (lead.estado === 'asignado' || lead.estado === 'perfilando') && !lead.primer_toque_humano_en;
+  if (!sinTocar) return '';
+  const minutos = (Date.now() - new Date(lead.creado_en).getTime()) / 60000;
+  if (minutos >= 5) return 'sla-critico';
+  if (minutos >= 2) return 'sla-alerta';
+  return '';
+}
+
+function seguimientoVencido(lead: Lead): boolean {
+  if (!lead.seguimiento_en) return false;
+  if (lead.estado === 'ganado' || lead.estado === 'perdido') return false;
+  return new Date(lead.seguimiento_en).getTime() <= Date.now();
+}
+
+type Filtro = 'sin_asignar' | 'sin_tocar' | 'seguimiento' | 'en_gestion' | 'propuesta_enviada' | 'documentacion' | 'entrega' | 'cerrados' | 'todos';
 
 const FILTROS: { id: Filtro; etiqueta: string }[] = [
   { id: 'sin_asignar',       etiqueta: 'Sin asignar' },
   { id: 'sin_tocar',         etiqueta: 'Sin tocar' },
+  { id: 'seguimiento',       etiqueta: 'Seguimiento hoy' },
   { id: 'en_gestion',        etiqueta: 'Contactado' },
   { id: 'propuesta_enviada', etiqueta: 'Propuesta' },
   { id: 'documentacion',     etiqueta: 'Documentación' },
@@ -37,6 +55,8 @@ function aplicarFiltro(leads: Lead[], filtro: Filtro): Lead[] {
       return leads.filter(
         (l) => (l.estado === 'asignado' || l.estado === 'perfilando') && !l.primer_toque_humano_en,
       );
+    case 'seguimiento':
+      return leads.filter(seguimientoVencido);
     case 'en_gestion':
       return leads.filter((l) => l.estado === 'en_gestion');
     case 'propuesta_enviada':
@@ -140,7 +160,7 @@ export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, on
           {visibles.map((lead) => (
             <tr
               key={lead.id}
-              className={lead.id === seleccionadoId ? 'seleccionada' : ''}
+              className={[lead.id === seleccionadoId ? 'seleccionada' : '', claseSLA(lead)].filter(Boolean).join(' ')}
               onClick={() => onSeleccionar(lead)}
             >
               <td>
@@ -149,6 +169,8 @@ export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, on
                   {noLeidos[lead.id] > 0 && (
                     <span className="lead-badge">{noLeidos[lead.id]}</span>
                   )}
+                  {lead.no_contactar && <span title="No contactar">🚫</span>}
+                  {seguimientoVencido(lead) && <span title="Seguimiento vencido">⏰</span>}
                 </span>
               </td>
               <td>{lead.producto_interes}</td>

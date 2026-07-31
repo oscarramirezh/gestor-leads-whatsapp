@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Lead } from '../lib/types';
 import { TiempoTranscurrido } from './TiempoTranscurrido';
+import { claseSLA } from './LeadTable';
 
 const ETIQUETA_PRODUCTO: Record<Lead['producto_interes'], string> = {
   portabilidad: 'Portabilidad',
@@ -63,12 +64,21 @@ export function LeadList({ leads, seleccionadoId, onSeleccionar, noLeidos = {} }
       {visibles.map((lead) => (
         <li
           key={lead.id}
-          className={lead.id === seleccionadoId ? 'lead-item seleccionado' : 'lead-item'}
+          className={[
+            'lead-item',
+            lead.id === seleccionadoId ? 'seleccionado' : '',
+            claseSLA(lead),
+          ].filter(Boolean).join(' ')}
           onClick={() => onSeleccionar(lead)}
         >
           <div className="lead-item-encabezado">
             <strong>{lead.nombre || lead.telefono}</strong>
             <div className="lead-item-badges">
+              {lead.no_contactar && <span title="No contactar">🚫</span>}
+              {lead.seguimiento_en &&
+                new Date(lead.seguimiento_en).getTime() <= Date.now() && (
+                  <span title="Seguimiento vencido">⏰</span>
+                )}
               {noLeidos[lead.id] > 0 && (
                 <span className="lead-badge">{noLeidos[lead.id]}</span>
               )}

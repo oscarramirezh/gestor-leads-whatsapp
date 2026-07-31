@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import type { Agente, Lead, LeadEstado, Mensaje, Temperatura } from '../lib/types';
+import type { Agente, Lead, LeadEstado, Mensaje, ProductoTipo, RespuestaRapida, Temperatura } from '../lib/types';
+import { MOTIVOS_PERDIDA } from '../lib/types';
 
 const ESTADOS_AVANCE: { valor: LeadEstado; label: string }[] = [
   { valor: 'en_gestion',        label: 'Contactado' },
@@ -13,6 +14,19 @@ const TEMPS: { valor: Temperatura; icon: string; label: string }[] = [
   { valor: 'caliente', icon: '🔥', label: 'Caliente' },
   { valor: 'tibio',    icon: '🌤', label: 'Tibio' },
   { valor: 'frio',     icon: '❄️', label: 'Frío' },
+];
+
+// Alta nueva paga bastante más comisión que portabilidad, así que marcarlo
+// es lo que permite medir el mix de producto por vendedor y por anuncio.
+const PRODUCTOS: { valor: ProductoTipo; corto: string; label: string }[] = [
+  { valor: 'portabilidad', corto: 'PORT', label: 'Portabilidad' },
+  { valor: 'alta_nueva',   corto: 'ALTA', label: 'Alta nueva' },
+];
+
+const SEGUIMIENTOS: { horas: number; label: string }[] = [
+  { horas: 3,  label: 'En 3 horas' },
+  { horas: 24, label: 'Mañana' },
+  { horas: 72, label: 'En 3 días' },
 ];
 
 interface Props {
@@ -42,6 +56,10 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [enviandoImg, setEnviandoImg] = useState(false);
   const [progresoImg, setProgresoImg] = useState('');
   const [respondiendo, setRespondiendo] = useState<{ id: string; cuerpo: string; autor: string } | null>(null);
+  const [respuestas, setRespuestas] = useState<RespuestaRapida[]>([]);
+  const [mostrarRespuestas, setMostrarRespuestas] = useState(false);
+  const [mostrarMotivos, setMostrarMotivos] = useState(false);
+  const [motivoElegido, setMotivoElegido] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const finRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -82,6 +100,27 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   useEffect(() => {
     finRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
+
+  // Las respuestas rápidas no cambian por lead: se cargan una vez.
+  useEffect(() => {
+    let activo = true;
+    supabase
+      .from('respuestas_rapidas')
+      .select('*')
+      .order('titulo')
+      .then(({ data }) => {
+        if (activo) setRespuestas((data as RespuestaRapida[]) ?? []);
+      });
+    return () => { activo = false; };
+  }, []);
+
+  function insertarRespuesta(r: RespuestaRapida) {
+    const nuevo = texto.trim() ? `${texto.trim()} ${r.cuerpo}` : r.cuerpo;
+    setTexto(nuevo);
+    localStorage.setItem(borrador_key, nuevo);
+    setMostrarRespuestas(false);
+    inputRef.current?.focus();
+  }
 
   function onCambiarNotas(valor: string) {
     setNotas(valor);
@@ -245,11 +284,44 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     if (!error && data) onLeadActualizado(data as Lead);
   }
 
+  async function cambiarProducto(producto: ProductoTipo) {
+    const nuevo = lead.producto_interes === producto ? 'indefinido' : producto;
+    const { data, error } = await supabase
+      .from('leads').update({ producto_interes: nuevo }).eq('id', lead.id).select().single();
+    if (!error && data) onLeadActualizado(data as Lead);
+  }
+
+  async function alternarNoContactar() {
+    const nuevo = !lead.no_contactar;
+    if (nuevo && !window.confirm('¿Marcar que este cliente NO quiere ser contactado?\n\nSe bloqueará el envío de mensajes.')) return;
+    const { data, error } = await supabase
+      .from('leads').update({ no_contactar: nuevo }).eq('id', lead.id).select().single();
+    if (!error && data) onLeadActualizado(data as Lead);
+  }
+
+  async function fijarSeguimiento(horas: number | null) {
+    const cambios: Partial<Lead> =
+      horas === null
+        ? { seguimiento_en: null, seguimiento_nota: null }
+        : { seguimiento_en: new Date(Date.now() + horas * 3600_000).toISOString() };
+
+    if (horas !== null) {
+      const nota = window.prompt('Nota del recordatorio (opcional):') ?? '';
+      cambios.seguimiento_nota = nota.trim() || null;
+    }
+    const { data, error } = await supabase
+      .from('leads').update(cambios).eq('id', lead.id).select().single();
+    if (!error && data) onLeadActualizado(data as Lead);
+  }
+
   async function cerrarLead(estado: 'ganado' | 'perdido') {
     let motivo_perdida: string | null = null;
     if (estado === 'perdido') {
-      motivo_perdida = window.prompt('¿Por qué se perdió este lead?') ?? '';
-      if (!motivo_perdida) return;
+      if (!motivoElegido) {
+        setMostrarMotivos(true);
+        return;
+      }
+      motivo_perdida = motivoElegido;
     }
 
     const { data, error } = await supabase
@@ -260,6 +332,8 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       .single();
 
     if (!error && data) onLeadActualizado(data as Lead);
+    setMostrarMotivos(false);
+    setMotivoElegido(null);
   }
 
   const cerrado = lead.estado === 'ganado' || lead.estado === 'perdido';
@@ -267,6 +341,17 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const sinTocarMas24h =
     !lead.primer_toque_humano_en &&
     Date.now() - new Date(lead.creado_en).getTime() > 24 * 60 * 60 * 1000;
+
+  // Ventana de servicio de WhatsApp: 24h desde el último mensaje del cliente.
+  // Dentro de la ventana respondemos gratis; fuera, solo plantillas de pago.
+  const ultimoEntrante = lead.ultimo_mensaje_entrante_en
+    ? new Date(lead.ultimo_mensaje_entrante_en).getTime()
+    : null;
+  const horasDesdeEntrante = ultimoEntrante ? (Date.now() - ultimoEntrante) / 3600_000 : null;
+  const ventanaCerrada = horasDesdeEntrante !== null && horasDesdeEntrante >= 24;
+  const ventanaPorCerrar =
+    horasDesdeEntrante !== null && horasDesdeEntrante >= 20 && horasDesdeEntrante < 24;
+  const horasRestantes = horasDesdeEntrante !== null ? Math.max(0, Math.ceil(24 - horasDesdeEntrante)) : 0;
 
   return (
     <div className="lead-chat">
@@ -304,6 +389,31 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               {t.icon}
             </button>
           ))}
+          {PRODUCTOS.map((p) => (
+            <button
+              key={p.valor}
+              className={`btn-producto${lead.producto_interes === p.valor ? ' activo' : ''}`}
+              onClick={() => cambiarProducto(p.valor)}
+              title={p.label}
+            >
+              {p.corto}
+            </button>
+          ))}
+          <select
+            className="select-seguimiento"
+            value=""
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v) fijarSeguimiento(v === 'quitar' ? null : Number(v));
+            }}
+            title="Recordatorio de seguimiento"
+          >
+            <option value="">⏰</option>
+            {SEGUIMIENTOS.map((s) => (
+              <option key={s.horas} value={s.horas}>{s.label}</option>
+            ))}
+            {lead.seguimiento_en && <option value="quitar">Quitar recordatorio</option>}
+          </select>
           {(lead.estado === 'asignado' || lead.estado === 'perfilando') && (
             <button onClick={tomarLead}>Tomar</button>
           )}
@@ -340,8 +450,74 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               {reactivando ? '…' : '↩️ Reactivar'}
             </button>
           )}
+          <button
+            className={`btn-no-contactar${lead.no_contactar ? ' activo' : ''}`}
+            onClick={alternarNoContactar}
+            title={lead.no_contactar ? 'Marcado como NO contactar — clic para reactivar' : 'Marcar como no contactar'}
+          >
+            🚫
+          </button>
         </div>
       </header>
+
+      {lead.no_contactar && (
+        <div className="aviso aviso-bloqueo">
+          🚫 Este cliente pidió no ser contactado. El envío está bloqueado.
+        </div>
+      )}
+
+      {!lead.no_contactar && ventanaCerrada && (
+        <div className="aviso aviso-bloqueo">
+          ⏳ La ventana de 24 h se cerró. Un mensaje normal no le llegará; usa la
+          plantilla de reactivación (tiene costo).
+        </div>
+      )}
+
+      {!lead.no_contactar && ventanaPorCerrar && (
+        <div className="aviso aviso-alerta">
+          ⏳ La ventana de 24 h cierra en ~{horasRestantes} h. Escríbele ahora y te sale
+          gratis; después solo con plantilla de pago.
+        </div>
+      )}
+
+      {lead.seguimiento_en && (
+        <div className="aviso aviso-info">
+          ⏰ Seguimiento: {new Date(lead.seguimiento_en).toLocaleString('es-MX', {
+            timeZone: 'America/Mexico_City', day: '2-digit', month: '2-digit',
+            hour: '2-digit', minute: '2-digit',
+          })}
+          {lead.seguimiento_nota && ` — ${lead.seguimiento_nota}`}
+        </div>
+      )}
+
+      {mostrarMotivos && (
+        <div className="motivos-panel">
+          <div className="motivos-titulo">¿Por qué se perdió?</div>
+          <div className="motivos-opciones">
+            {MOTIVOS_PERDIDA.map((m) => (
+              <button
+                key={m}
+                className={`motivo-chip${motivoElegido === m ? ' activo' : ''}`}
+                onClick={() => setMotivoElegido(m)}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          <div className="motivos-acciones">
+            <button
+              className="btn-perdido"
+              disabled={!motivoElegido}
+              onClick={() => cerrarLead('perdido')}
+            >
+              Marcar perdido
+            </button>
+            <button onClick={() => { setMostrarMotivos(false); setMotivoElegido(null); }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {mostrarNotas && (
         <div className="notas-panel">
@@ -454,6 +630,31 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               <button type="button" className="responder-cancelar" onClick={() => setRespondiendo(null)}>✕</button>
             </div>
           )}
+          {mostrarRespuestas && (
+            <div className="respuestas-panel">
+              {respuestas.length === 0 ? (
+                <p className="respuestas-vacio">
+                  Aún no hay respuestas rápidas. Se crean en la tabla
+                  <code> respuestas_rapidas</code> de Supabase.
+                </p>
+              ) : (
+                respuestas.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className="respuesta-item"
+                    onClick={() => insertarRespuesta(r)}
+                  >
+                    <span className="respuesta-titulo">
+                      {r.titulo}
+                      {r.agente_id && <span className="respuesta-personal">personal</span>}
+                    </span>
+                    <span className="respuesta-cuerpo">{r.cuerpo}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
           <form onSubmit={enviarMensaje} className="lead-chat-form">
             <input
               ref={fileRef}
@@ -463,6 +664,14 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               style={{ display: 'none' }}
               onChange={onPickImagen}
             />
+            <button
+              type="button"
+              className={`btn-respuestas${mostrarRespuestas ? ' activo' : ''}`}
+              onClick={() => setMostrarRespuestas((v) => !v)}
+              title="Respuestas rápidas"
+            >
+              ⚡
+            </button>
             <button
               type="button"
               className="btn-adjuntar"
@@ -476,10 +685,10 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               type="text"
               value={texto}
               onChange={(e) => { setTexto(e.target.value); localStorage.setItem(borrador_key, e.target.value); }}
-              placeholder="Escribe un mensaje…"
-              disabled={enviando}
+              placeholder={lead.no_contactar ? 'Cliente marcado como no contactar' : 'Escribe un mensaje…'}
+              disabled={enviando || lead.no_contactar}
             />
-            <button type="submit" disabled={enviando || !texto.trim()}>
+            <button type="submit" disabled={enviando || !texto.trim() || lead.no_contactar}>
               Enviar
             </button>
           </form>

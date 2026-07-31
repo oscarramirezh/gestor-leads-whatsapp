@@ -34,7 +34,31 @@ export interface Lead {
   motivo_perdida: string | null;
   notas: string | null;
   temperatura: Temperatura;
+  ultimo_mensaje_entrante_en: string | null;
+  seguimiento_en: string | null;
+  seguimiento_nota: string | null;
+  no_contactar: boolean;
 }
+
+export interface RespuestaRapida {
+  id: string;
+  titulo: string;
+  cuerpo: string;
+  agente_id: string | null;
+  creado_en: string;
+}
+
+// Opciones fijas para poder analizar por qué se pierden los leads.
+// Con texto libre cada quien escribe distinto y no se puede agrupar.
+export const MOTIVOS_PERDIDA = [
+  'No contestó',
+  'Precio / no le convenció',
+  'Ya contrató con otro',
+  'Fuera de cobertura',
+  'Solo preguntaba',
+  'Datos incorrectos',
+  'Otro',
+] as const;
 
 export interface Mensaje {
   id: string;
