@@ -41,6 +41,68 @@ async function getToken(): Promise<string> {
   return data.session?.access_token ?? '';
 }
 
+/**
+ * Reduce la foto antes de subirla.
+ *
+ * Una foto de celular pesa 3-6 MB, que en base64 son 4-8 MB. Netlify rechaza
+ * el POST por tamaño ANTES de que corra la función, así que devuelve un 400
+ * sin cuerpo JSON y el chat solo podía mostrar el error genérico.
+ *
+ * A 1600 px de lado y calidad 0.82 una foto queda en 200-500 KB, que además
+ * viaja mucho más rápido con datos móviles. WhatsApp recomprime igual, así
+ * que el cliente no nota diferencia.
+ */
+const LADO_MAXIMO = 1600;
+const CALIDAD_JPEG = 0.82;
+
+function prepararImagen(file: File): Promise<{ base64: string; mime: string; preview: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const img = new Image();
+
+      // Si el navegador no puede decodificarla (por ejemplo un HEIC en un
+      // navegador sin soporte), mandamos el original y que decida el servidor.
+      img.onerror = () =>
+        resolve({ base64: dataUrl.split(',')[1], mime: file.type || 'image/jpeg', preview: dataUrl });
+
+      img.onload = () => {
+        let { width, height } = img;
+        const mayor = Math.max(width, height);
+        if (mayor > LADO_MAXIMO) {
+          const escala = LADO_MAXIMO / mayor;
+          width = Math.round(width * escala);
+          height = Math.round(height * escala);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve({ base64: dataUrl.split(',')[1], mime: file.type || 'image/jpeg', preview: dataUrl });
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const comprimida = canvas.toDataURL('image/jpeg', CALIDAD_JPEG);
+        // Si comprimir no ayudó (imágenes ya pequeñas), nos quedamos con la original.
+        const usarOriginal = comprimida.length >= dataUrl.length;
+        const salida = usarOriginal ? dataUrl : comprimida;
+        resolve({
+          base64: salida.split(',')[1],
+          mime: usarOriginal ? file.type || 'image/jpeg' : 'image/jpeg',
+          preview: salida,
+        });
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const borrador_key = `borrador_${lead.id}`;
@@ -179,20 +241,22 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     }, 1000);
   }
 
-  function onPickImagen(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPickImagen(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        const base64 = dataUrl.split(',')[1];
-        const mime = file.type || 'image/jpeg';
-        setImagenes((prev) => [...prev, { base64, mime, preview: dataUrl }]);
-      };
-      reader.readAsDataURL(file);
-    });
     e.target.value = '';
+    if (!files.length) return;
+
+    setError(null);
+    setProgresoImg('Preparando imagen…');
+    try {
+      for (const file of files) {
+        const img = await prepararImagen(file);
+        setImagenes((prev) => [...prev, img]);
+      }
+    } catch {
+      setError('No se pudo leer la imagen. Intenta con otra.');
+    }
+    setProgresoImg('');
   }
 
   function quitarImagen(idx: number) {
@@ -223,7 +287,14 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setError(`Error en imagen ${i + 1}: ${data?.error ?? 'No se pudo enviar'}`);
+        // Sin cuerpo JSON el rechazo viene de Netlify, no de nuestra función:
+        // casi siempre es que el POST excedió el límite de tamaño.
+        const detalle =
+          data?.error ??
+          (res.status === 400 || res.status === 413
+            ? 'La imagen pesa demasiado para enviarse. Intenta con una foto más pequeña.'
+            : `Falló el envío (código ${res.status}).`);
+        setError(`Imagen ${i + 1}: ${detalle}`);
         setEnviandoImg(false);
         setProgresoImg('');
         return;
