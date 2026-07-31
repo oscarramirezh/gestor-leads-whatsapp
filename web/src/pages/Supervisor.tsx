@@ -8,6 +8,24 @@ import { KanbanView } from '../components/KanbanView';
 import { exportarLeadsCSV } from '../lib/csv';
 import { Logo } from '../components/Logo';
 
+// PostgREST corta cada respuesta en 1000 filas, así que pedimos por bloques
+// hasta agotarlos. Sin esto los contadores y la tabla quedan truncados.
+async function cargarTodosLosLeads(): Promise<Lead[]> {
+  const TAMANO_BLOQUE = 1000;
+  const todos: Lead[] = [];
+  for (let desde = 0; ; desde += TAMANO_BLOQUE) {
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .order('creado_en', { ascending: false })
+      .range(desde, desde + TAMANO_BLOQUE - 1);
+    if (error || !data?.length) break;
+    todos.push(...(data as Lead[]));
+    if (data.length < TAMANO_BLOQUE) break;
+  }
+  return todos;
+}
+
 export function Supervisor({ agente }: { agente: Agente }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [vendedores, setVendedores] = useState<Agente[]>([]);
@@ -56,14 +74,9 @@ export function Supervisor({ agente }: { agente: Agente }) {
         if (activo) setVendedores((data as Agente[]) ?? []);
       });
 
-    supabase
-      .from('leads')
-      .select('*')
-      .order('creado_en', { ascending: false })
-      .limit(500)
-      .then(({ data }) => {
-        if (activo) setLeads((data as Lead[]) ?? []);
-      });
+    cargarTodosLosLeads().then((lista) => {
+      if (activo) setLeads(lista);
+    });
 
     const canalLeads = supabase
       .channel('leads-supervisor')
