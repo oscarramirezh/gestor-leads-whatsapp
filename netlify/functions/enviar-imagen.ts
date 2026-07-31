@@ -12,7 +12,10 @@ async function subirMedia(base64: string, mimeType: string, token: string, phone
   const buffer = Buffer.from(base64, 'base64');
   const blob = new Blob([buffer], { type: mimeType });
   const form = new FormData();
-  form.append('file', blob, 'imagen.jpg');
+  // La extensión debe coincidir con el mime: mandar un PNG llamado
+  // "imagen.jpg" hace que Meta rechace la subida.
+  const extension = mimeType.split('/')[1]?.split('+')[0] ?? 'jpg';
+  form.append('file', blob, `imagen.${extension}`);
   form.append('type', mimeType);
   form.append('messaging_product', 'whatsapp');
 
@@ -87,8 +90,13 @@ export const handler: Handler = async (event) => {
     const { token: waToken, phoneNumberId } = config();
     mediaId = await subirMedia(imageBase64, tipoFinal, waToken, phoneNumberId);
   } catch (err: any) {
-    console.error(err);
-    return { statusCode: 502, body: JSON.stringify({ error: 'No se pudo subir la imagen a WhatsApp' }) };
+    console.error('Error subiendo media a Meta:', err);
+    // Devolvemos el motivo real de Meta: sin esto el chat solo puede mostrar
+    // un mensaje genérico y no hay forma de saber qué falló desde el navegador.
+    return {
+      statusCode: 502,
+      body: JSON.stringify({ error: `Meta rechazó la subida: ${err?.message ?? 'sin detalle'}` }),
+    };
   }
 
   const { token: waToken, phoneNumberId } = config();
@@ -107,7 +115,8 @@ export const handler: Handler = async (event) => {
   const resData: any = await res.json();
   if (!res.ok) {
     console.error('Error enviando imagen:', resData);
-    return { statusCode: 502, body: JSON.stringify({ error: 'WhatsApp rechazó el mensaje' }) };
+    const motivo = resData?.error?.message ?? 'sin detalle';
+    return { statusCode: 502, body: JSON.stringify({ error: `WhatsApp rechazó la imagen: ${motivo}` }) };
   }
 
   const waMessageId = resData?.messages?.[0]?.id ?? null;
