@@ -41,6 +41,11 @@ export const handler: Handler = async (event) => {
     return { statusCode: 401, body: JSON.stringify({ error: 'Sesión inválida' }) };
   }
 
+  // Netlify limita el body a ~6 MB; en base64 eso es ~4.5 MB de imagen real
+  if ((event.body?.length ?? 0) > 5_500_000) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'La imagen es demasiado grande (máx ~4 MB)' }) };
+  }
+
   let body: { lead_id?: string; imageBase64?: string; mimeType?: string; caption?: string };
   try {
     body = JSON.parse(event.body ?? '{}');
@@ -53,7 +58,8 @@ export const handler: Handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Faltan lead_id, imageBase64 o mimeType' }) };
   }
 
-  if (!mimeType.startsWith('image/')) {
+  const tipoFinal = mimeType.startsWith('image/') ? mimeType : 'image/jpeg';
+  if (!mimeType.startsWith('image/') && mimeType !== '') {
     return { statusCode: 400, body: JSON.stringify({ error: 'Solo se permiten imágenes' }) };
   }
 
@@ -75,7 +81,7 @@ export const handler: Handler = async (event) => {
   let mediaId: string;
   try {
     const { token: waToken, phoneNumberId } = config();
-    mediaId = await subirMedia(imageBase64, mimeType, waToken, phoneNumberId);
+    mediaId = await subirMedia(imageBase64, tipoFinal, waToken, phoneNumberId);
   } catch (err: any) {
     console.error(err);
     return { statusCode: 502, body: JSON.stringify({ error: 'No se pudo subir la imagen a WhatsApp' }) };

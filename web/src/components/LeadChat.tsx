@@ -101,7 +101,8 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       reader.onload = () => {
         const dataUrl = reader.result as string;
         const base64 = dataUrl.split(',')[1];
-        setImagenes((prev) => [...prev, { base64, mime: file.type, preview: dataUrl }]);
+        const mime = file.type || 'image/jpeg';
+        setImagenes((prev) => [...prev, { base64, mime, preview: dataUrl }]);
       };
       reader.readAsDataURL(file);
     });
