@@ -9,7 +9,7 @@
     "typecheck:web": "tsc -p web --noEmit",
     "dev": "netlify dev",
     "dev:web": "vite",
-    "build": "vite build"
+    "build": "tsc --noEmit && tsc -p web --noEmit && vite build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
