@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Lead } from '../lib/types';
 import { TiempoTranscurrido } from './TiempoTranscurrido';
 
@@ -27,13 +28,39 @@ interface Props {
 }
 
 export function LeadList({ leads, seleccionadoId, onSeleccionar, noLeidos = {} }: Props) {
+  const [busqueda, setBusqueda] = useState('');
+
+  // El teléfono va en E.164 (+52…) y el vendedor teclea solo los dígitos.
+  const termino = busqueda.trim().toLowerCase();
+  const digitos = termino.replace(/\D/g, '');
+  const visibles = !termino
+    ? leads
+    : leads.filter((l) => {
+        const porNombre = (l.nombre ?? '').toLowerCase().includes(termino);
+        const porTelefono = digitos.length > 0 && l.telefono.replace(/\D/g, '').includes(digitos);
+        return porNombre || porTelefono;
+      });
+
   if (leads.length === 0) {
     return <p className="lead-list-vacio">No tienes leads asignados por ahora.</p>;
   }
 
   return (
-    <ul className="lead-list">
-      {leads.map((lead) => (
+    <>
+      <div className="lead-list-buscador">
+        <input
+          type="search"
+          className="input-buscar"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar teléfono o nombre…"
+        />
+      </div>
+      {visibles.length === 0 && (
+        <p className="lead-list-vacio">Ningún lead coincide con "{busqueda.trim()}".</p>
+      )}
+      <ul className="lead-list">
+      {visibles.map((lead) => (
         <li
           key={lead.id}
           className={lead.id === seleccionadoId ? 'lead-item seleccionado' : 'lead-item'}
@@ -55,6 +82,7 @@ export function LeadList({ leads, seleccionadoId, onSeleccionar, noLeidos = {} }
           {!lead.primer_toque_humano_en && <TiempoTranscurrido desde={lead.creado_en} />}
         </li>
       ))}
-    </ul>
+      </ul>
+    </>
   );
 }

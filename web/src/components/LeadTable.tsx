@@ -64,13 +64,44 @@ interface Props {
 export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, onReasignar, noLeidos = {} }: Props) {
   const [filtro, setFiltro] = useState<Filtro>('sin_tocar');
   const [vendedorFiltro, setVendedorFiltro] = useState<string>('todos');
+  const [busqueda, setBusqueda] = useState('');
   const leadsPorVendedor = vendedorFiltro === 'todos' ? leads : leads.filter((l) => l.vendedor_asignado_id === vendedorFiltro);
-  const visibles = aplicarFiltro(leadsPorVendedor, filtro);
+
+  // El teléfono se guarda en E.164 (+52…), pero el vendedor suele escribir solo
+  // los 10 dígitos, así que comparamos ambos lados sin símbolos.
+  const termino = busqueda.trim().toLowerCase();
+  const digitos = termino.replace(/\D/g, '');
+  const buscados = !termino
+    ? leadsPorVendedor
+    : leadsPorVendedor.filter((l) => {
+        const porNombre = (l.nombre ?? '').toLowerCase().includes(termino);
+        const porTelefono = digitos.length > 0 && l.telefono.replace(/\D/g, '').includes(digitos);
+        return porNombre || porTelefono;
+      });
+
+  // Al buscar mostramos todos los estados: si el lead que busco está en
+  // "Ganado" y la pestaña activa es "Sin tocar", esconderlo sería confuso.
+  const visibles = termino ? buscados : aplicarFiltro(buscados, filtro);
   const nombreVendedor = (id: string | null) => vendedores.find((v) => v.id === id)?.nombre ?? '—';
   const vendedoresOrdenados = [...vendedores].sort((a, b) => a.nombre.localeCompare(b.nombre));
 
   return (
     <div className="lead-table-wrap">
+      <div className="lead-table-buscador">
+        <input
+          type="search"
+          className="input-buscar"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por teléfono o nombre…"
+        />
+        {termino && (
+          <span className="buscador-resultado">
+            {visibles.length} {visibles.length === 1 ? 'resultado' : 'resultados'} · todos los estados
+          </span>
+        )}
+      </div>
+
       <div className="lead-table-filtros">
         <select
           className="select-vendedor-filtro"
@@ -86,9 +117,9 @@ export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, on
           <button
             key={f.id}
             className={f.id === filtro ? 'filtro activo' : 'filtro'}
-            onClick={() => setFiltro(f.id)}
+            onClick={() => { setFiltro(f.id); setBusqueda(''); }}
           >
-            {f.etiqueta} ({aplicarFiltro(leadsPorVendedor, f.id).length})
+            {f.etiqueta} ({aplicarFiltro(buscados, f.id).length})
           </button>
         ))}
       </div>
@@ -153,7 +184,7 @@ export function LeadTable({ leads, vendedores, seleccionadoId, onSeleccionar, on
           {visibles.length === 0 && (
             <tr>
               <td colSpan={7} className="lead-table-vacio">
-                No hay leads en esta categoría.
+                {termino ? `Ningún lead coincide con "${busqueda.trim()}".` : 'No hay leads en esta categoría.'}
               </td>
             </tr>
           )}

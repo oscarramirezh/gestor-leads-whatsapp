@@ -584,6 +584,33 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 /* ---------- Tabla leads supervisor ---------- */
 .lead-table-wrap { overflow: auto; height: 100%; }
 
+.lead-list-buscador {
+  padding: 0.5rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+}
+
+.lead-table-buscador {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 0.6rem 0;
+  background: var(--color-surface);
+}
+.input-buscar {
+  flex: 1; min-width: 0; width: 0;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+}
+.input-buscar:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.buscador-resultado {
+  font-size: 0.72rem; color: var(--color-text-muted);
+  white-space: nowrap; flex-shrink: 0;
+}
+
 .lead-table-filtros {
   display: flex; gap: 0.4rem; padding: 0.6rem;
   flex-wrap: wrap; align-items: center;
