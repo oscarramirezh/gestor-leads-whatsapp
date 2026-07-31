@@ -163,7 +163,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${sesion.session?.access_token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ lead_id: lead.id }),
     });
@@ -191,7 +191,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${sesion.session?.access_token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         lead_id: lead.id,
