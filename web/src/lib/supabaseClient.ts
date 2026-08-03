@@ -12,3 +12,11 @@ if (!url || !anonKey) {
 }
 
 export const supabase = createClient(url, anonKey);
+
+// El socket de Realtime se autentica con el JWT al conectarse. Cuando Supabase
+// refresca el token (~cada hora) esa credencial queda vieja, el servidor cierra
+// la conexión y los canales dejan de recibir SIN emitir ningún error: la app se
+// ve congelada hasta que recargas. Hay que reenviarle el token nuevo.
+supabase.auth.onAuthStateChange((_evento, sesion) => {
+  if (sesion?.access_token) supabase.realtime.setAuth(sesion.access_token);
+});

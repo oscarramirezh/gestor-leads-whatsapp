@@ -5,6 +5,7 @@ import { LeadList } from '../components/LeadList';
 import { LeadChat } from '../components/LeadChat';
 import { KanbanView } from '../components/KanbanView';
 import { Logo } from '../components/Logo';
+import { useRefrescoSilencioso, mismaLista } from '../lib/useRefrescoSilencioso';
 
 const ESTADOS_BANDEJA = ['perfilando', 'asignado', 'en_gestion', 'propuesta_enviada', 'documentacion', 'entrega'] as const;
 
@@ -42,6 +43,20 @@ export function Dashboard({ agente }: { agente: Agente }) {
   useEffect(() => {
     seleccionadoRef.current = seleccionado;
   }, [seleccionado]);
+
+  // Rellena lo que Realtime se haya perdido si el socket estuvo caído.
+  // Solo toca la lista de leads: si tocara `seleccionado` o `vistaMovil`
+  // cerraría el chat que el vendedor tenga abierto.
+  useRefrescoSilencioso(async () => {
+    const { data } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('vendedor_asignado_id', agente.id)
+      .in('estado', ESTADOS_BANDEJA)
+      .order('creado_en', { ascending: true });
+    const frescos = (data as Lead[]) ?? [];
+    setLeads((actuales) => (mismaLista(actuales, frescos) ? actuales : frescos));
+  });
 
   useEffect(() => {
     let activo = true;

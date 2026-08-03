@@ -7,6 +7,7 @@ import { LeadChat } from '../components/LeadChat';
 import { KanbanView } from '../components/KanbanView';
 import { exportarLeadsCSV } from '../lib/csv';
 import { Logo } from '../components/Logo';
+import { useRefrescoSilencioso, mismaLista } from '../lib/useRefrescoSilencioso';
 
 // PostgREST corta cada respuesta en 1000 filas, así que pedimos por bloques
 // hasta agotarlos. Sin esto los contadores y la tabla quedan truncados.
@@ -62,6 +63,12 @@ export function Supervisor({ agente }: { agente: Agente }) {
   useEffect(() => {
     seleccionadoRef.current = seleccionado;
   }, [seleccionado]);
+
+  // Recupera lo que Realtime se haya perdido, sin tocar el lead abierto.
+  useRefrescoSilencioso(async () => {
+    const frescos = await cargarTodosLosLeads();
+    setLeads((actuales) => (mismaLista(actuales, frescos) ? actuales : frescos));
+  });
 
   useEffect(() => {
     let activo = true;

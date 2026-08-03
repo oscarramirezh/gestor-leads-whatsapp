@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import type { Agente, Lead, LeadEstado, Mensaje, ProductoTipo, RespuestaRapida, Temperatura } from '../lib/types';
 import { MOTIVOS_PERDIDA } from '../lib/types';
+import { useRefrescoSilencioso, mismaLista } from '../lib/useRefrescoSilencioso';
 
 const ESTADOS_AVANCE: { valor: LeadEstado; label: string }[] = [
   { valor: 'en_gestion',        label: 'Contactado' },
@@ -54,6 +55,18 @@ async function getToken(): Promise<string> {
  */
 const LADO_MAXIMO = 1600;
 const CALIDAD_JPEG = 0.82;
+
+/** En móvil el Enter del teclado sirve para hacer párrafo, no para enviar. */
+function esMovil(): boolean {
+  return window.matchMedia('(max-width: 760px)').matches;
+}
+
+/** El área de texto crece con el contenido, hasta un tope para no comerse el chat. */
+const ALTO_MAXIMO_INPUT = 140;
+function ajustarAlto(el: HTMLTextAreaElement) {
+  el.style.height = 'auto';
+  el.style.height = `${Math.min(el.scrollHeight, ALTO_MAXIMO_INPUT)}px`;
+}
 
 function prepararImagen(file: File): Promise<{ base64: string; mime: string; preview: string }> {
   return new Promise((resolve, reject) => {
@@ -124,7 +137,7 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   const [motivoElegido, setMotivoElegido] = useState<string | null>(null);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const finRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const notasTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,6 +177,19 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
   useEffect(() => {
     finRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
+
+  // Si el socket estuvo caído, aquí se recuperan los mensajes perdidos.
+  // `mismaLista` evita re-renderizar cuando no hay nada nuevo: si no, el
+  // efecto de arriba haría saltar el scroll cada vez que vuelves a la pestaña.
+  useRefrescoSilencioso(async () => {
+    const { data } = await supabase
+      .from('conversaciones')
+      .select('*')
+      .eq('lead_id', lead.id)
+      .order('timestamp', { ascending: true });
+    const frescos = (data as Mensaje[]) ?? [];
+    setMensajes((actuales) => (mismaLista(actuales, frescos) ? actuales : frescos));
+  });
 
   // Las respuestas rápidas no cambian por lead: se cargan una vez.
   useEffect(() => {
@@ -229,6 +255,8 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     localStorage.setItem(borrador_key, nuevo);
     setMostrarRespuestas(false);
     inputRef.current?.focus();
+    // La respuesta suele ocupar varias líneas: hay que recalcular el alto.
+    if (inputRef.current) ajustarAlto(inputRef.current);
   }
 
   function onCambiarNotas(valor: string) {
@@ -337,8 +365,8 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     inputRef.current?.focus();
   }
 
-  async function enviarMensaje(e: React.FormEvent) {
-    e.preventDefault();
+  async function enviarMensaje(e?: { preventDefault: () => void }) {
+    e?.preventDefault();
     if (!texto.trim()) return;
     setEnviando(true);
     setError(null);
@@ -368,6 +396,9 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
     setTexto('');
     localStorage.removeItem(borrador_key);
     setRespondiendo(null);
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'; // vuelve a una línea
+    }
   }
 
   async function tomarLead() {
@@ -674,6 +705,8 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
             onChange={(e) => onCambiarNotas(e.target.value)}
             placeholder="Apuntes privados (no le llegan al cliente)…"
             rows={3}
+            spellCheck
+            lang="es"
           />
         </div>
       )}
@@ -824,13 +857,30 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
             >
               🖼️
             </button>
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
+              className="input-mensaje"
+              rows={1}
               value={texto}
-              onChange={(e) => { setTexto(e.target.value); localStorage.setItem(borrador_key, e.target.value); }}
+              onChange={(e) => {
+                setTexto(e.target.value);
+                localStorage.setItem(borrador_key, e.target.value);
+                ajustarAlto(e.target);
+              }}
+              onKeyDown={(e) => {
+                // Enter envía; Shift+Enter (o Alt/Ctrl+Enter) hace párrafo.
+                // En móvil el teclado manda su propio salto de línea, así que
+                // ahí no interceptamos: se usa el botón Enviar.
+                if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.ctrlKey && !esMovil()) {
+                  e.preventDefault();
+                  enviarMensaje(e);
+                }
+              }}
               placeholder={lead.no_contactar ? 'Cliente marcado como no contactar' : 'Escribe un mensaje…'}
               disabled={enviando || lead.no_contactar}
+              spellCheck
+              lang="es"
+              autoCapitalize="sentences"
             />
             <button type="submit" disabled={enviando || !texto.trim() || lead.no_contactar}>
               Enviar

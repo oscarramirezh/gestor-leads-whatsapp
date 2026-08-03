@@ -405,15 +405,23 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
   width: 100%; box-sizing: border-box;
   align-items: center;
 }
-.lead-chat-form input {
-  flex: 1; min-width: 0; padding: 0.6rem 0.9rem;
-  border-radius: 999px;
+.lead-chat-form .input-mensaje {
+  flex: 1; min-width: 0; width: 0; /* width:0 fuerza a Safari a respetar flex:1 */
+  padding: 0.55rem 0.9rem;
   border: 1px solid var(--color-border);
+  border-radius: 1.15rem;
   font-size: 0.9rem;
-  width: 0; /* fuerza a Safari a respetar flex: 1 */
+  font-family: inherit;
+  line-height: 1.35;
+  resize: none;              /* el alto lo maneja ajustarAlto() */
+  overflow-y: auto;
+  max-height: 140px;
   -webkit-appearance: none;
+  box-sizing: border-box;
 }
-.lead-chat-form input:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.lead-chat-form .input-mensaje:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+/* El botón se queda abajo cuando el área de texto crece */
+.lead-chat-form { align-items: flex-end; }
 .lead-chat-form button {
   background: var(--color-accent); color: var(--color-primary-dark);
   border: none; font-weight: 700; padding: 0.5rem 1.1rem;
@@ -865,6 +873,7 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
   .menu-panel { min-width: 232px; }
 
   /* Input de mensaje más grande en móvil */
-  .lead-chat-form input { font-size: 1rem; }
+  /* 16px evita que iOS haga zoom al enfocar el campo */
+  .lead-chat-form .input-mensaje { font-size: 1rem; }
   .lead-chat-form { padding: 0.5rem; }
 }
