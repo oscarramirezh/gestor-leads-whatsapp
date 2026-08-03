@@ -56,9 +56,19 @@ async function getToken(): Promise<string> {
 const LADO_MAXIMO = 1600;
 const CALIDAD_JPEG = 0.82;
 
-/** En móvil el Enter del teclado sirve para hacer párrafo, no para enviar. */
-function esMovil(): boolean {
-  return window.matchMedia('(max-width: 760px)').matches;
+/**
+ * ¿El aparato se maneja con el dedo (sin teclado físico)?
+ *
+ * No se puede usar el ancho de pantalla: un teléfono en horizontal supera los
+ * 760 px y volvería a tratarse como computadora. `pointer: coarse` mira el
+ * puntero principal, así que da true en celular y tablet, y false en una
+ * laptop —incluso con pantalla táctil— porque ahí manda el trackpad.
+ *
+ * En estos aparatos Enter escribe un salto de línea y solo se envía con el
+ * botón, igual que en WhatsApp.
+ */
+function esTactil(): boolean {
+  return window.matchMedia('(pointer: coarse)').matches;
 }
 
 /** El área de texto crece con el contenido, hasta un tope para no comerse el chat. */
@@ -868,10 +878,11 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
                 ajustarAlto(e.target);
               }}
               onKeyDown={(e) => {
-                // Enter envía; Shift+Enter (o Alt/Ctrl+Enter) hace párrafo.
-                // En móvil el teclado manda su propio salto de línea, así que
-                // ahí no interceptamos: se usa el botón Enviar.
-                if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.ctrlKey && !esMovil()) {
+                // En celular y tablet nunca interceptamos Enter: escribe un
+                // salto de línea y se envía solo con la flecha.
+                if (esTactil()) return;
+                // Con teclado físico: Enter envía, Shift+Enter hace párrafo.
+                if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.ctrlKey) {
                   e.preventDefault();
                   enviarMensaje(e);
                 }
@@ -882,8 +893,15 @@ export function LeadChat({ lead, agente, onLeadActualizado, onVolver }: Props) {
               lang="es"
               autoCapitalize="sentences"
             />
-            <button type="submit" disabled={enviando || !texto.trim() || lead.no_contactar}>
-              Enviar
+            <button
+              type="submit"
+              className="btn-enviar-msg"
+              disabled={enviando || !texto.trim() || lead.no_contactar}
+              aria-label="Enviar mensaje"
+            >
+              {/* En táctil se muestra la flecha; con teclado, la palabra. */}
+              <span className="enviar-texto">Enviar</span>
+              <span className="enviar-flecha" aria-hidden="true">➤</span>
             </button>
           </form>
         </>

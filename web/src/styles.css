@@ -422,6 +422,21 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .lead-chat-form .input-mensaje:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 /* El botón se queda abajo cuando el área de texto crece */
 .lead-chat-form { align-items: flex-end; }
+
+/* Con teclado físico se ve "Enviar"; con el dedo, una flecha redonda.
+   El criterio es el puntero, no el ancho: un celular en horizontal
+   sigue siendo táctil. */
+.enviar-flecha { display: none; }
+@media (pointer: coarse) {
+  .enviar-texto { display: none; }
+  .enviar-flecha { display: inline; font-size: 1.05rem; line-height: 1; }
+  .btn-enviar-msg {
+    width: 44px; height: 44px;      /* objetivo táctil cómodo */
+    padding: 0; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+}
 .lead-chat-form button {
   background: var(--color-accent); color: var(--color-primary-dark);
   border: none; font-weight: 700; padding: 0.5rem 1.1rem;
